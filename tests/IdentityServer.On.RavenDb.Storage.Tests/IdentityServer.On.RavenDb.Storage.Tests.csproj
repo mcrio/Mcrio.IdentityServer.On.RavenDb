@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
+        <IsPackable>false</IsPackable>
+        <LangVersion>8</LangVersion>
+        <Nullable>enable</Nullable>
+        <CodeAnalysisRuleSet>..\..\codestyle.tests.ruleset</CodeAnalysisRuleSet>
+        <AssemblyName>Mcrio.IdentityServer.On.RavenDb.Storage.Tests</AssemblyName>
+        <RootNamespace>Mcrio.IdentityServer.On.RavenDb.Storage.Tests</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="IdentityServer4" Version="4.0.4" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
+        <PackageReference Include="xunit" Version="2.4.0" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0" />
+        <PackageReference Include="coverlet.collector" Version="1.2.0" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.6" />
+        <PackageReference Include="RavenDB.TestDriver" Version="4.2.103" />
+        <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" />
+        <PackageReference Include="FluentAssertions" Version="5.10.3" />
+        <PackageReference Include="Moq" Version="4.14.5" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\src\IdentityServer.On.RavenDb.Storage\IdentityServer.On.RavenDb.Storage.csproj" />
+    </ItemGroup>
+
+</Project>

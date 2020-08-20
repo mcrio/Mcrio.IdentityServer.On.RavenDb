@@ -1,0 +1,84 @@
+﻿using System;
+using FluentAssertions;
+using IdentityServer4.Models;
+using Mcrio.IdentityServer.On.RavenDb.Storage.Mappers.Profiles;
+using Xunit;
+using Xunit.Abstractions;
+
+namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Mappings
+{
+    public class IdentityResourcesMappersTests : IntegrationTestBase
+    {
+        private readonly ITestOutputHelper _output;
+
+        public IdentityResourcesMappersTests(ITestOutputHelper output)
+        {
+            _output = output;
+        }
+
+        [Fact]
+        public void IdentityResourceAutomapperConfigurationIsValid()
+        {
+            var mapper = InitializeServices().Mapper;
+            mapper.AssertConfigurationIsValid<IdentityResourceMapperProfile>();
+        }
+
+        [Fact]
+        public void CanMapIdentityResources()
+        {
+            var mapper = InitializeServices().Mapper;
+
+            var model = new IdentityResource();
+            var mappedEntity = mapper.ToEntity(model);
+            var mappedModel = mapper.ToModel(mappedEntity);
+
+            Assert.NotNull(mappedModel);
+            Assert.NotNull(mappedEntity);
+        }
+
+        [Fact]
+        public void ShouldMapSameType()
+        {
+            var id = Guid.NewGuid().ToString();
+            DateTime created = DateTime.UtcNow;
+            var entity1 = new RavenDb.Storage.Entities.IdentityResource()
+            {
+                Id = id,
+                Name = "test",
+                Created = created,
+            };
+
+            var entity2 = new RavenDb.Storage.Entities.IdentityResource()
+            {
+                Id = id,
+                Name = "test 22222",
+                Created = created,
+            };
+
+            var mapper = InitializeServices().Mapper;
+
+            entity1.Should().NotBeEquivalentTo(entity2);
+            mapper.Map(entity1, entity2);
+
+            entity1.Should().BeEquivalentTo(entity2);
+            entity1.Should().NotBeSameAs(entity2, "not the same instance");
+        }
+
+        [Fact]
+        public void ShouldMapIdentityResourceNameToEntityId()
+        {
+            var model = new IdentityResource()
+            {
+                Name = "test-name",
+            };
+
+            var mapper = InitializeServices().Mapper;
+
+            RavenDb.Storage.Entities.IdentityResource entity = mapper.ToEntity(model);
+            _output.WriteLine(entity.Id);
+            entity.Id.Should().NotBeEmpty();
+            entity.Id.Should().EndWith("test-name");
+            entity.Id.Should().NotStartWith("test-name");
+        }
+    }
+}
