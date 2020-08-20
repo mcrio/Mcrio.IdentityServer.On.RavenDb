@@ -6,32 +6,34 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
 {
     internal static class TestData
     {
-        internal static IEnumerable<ApiScope> GetScopes() => new[]
+        // Having ApiResources populates the `aud` token value with APIs that have the requested scope.
+        internal static IEnumerable<ApiResource> GetApiResources() => new List<ApiResource>
         {
-            new ApiScope("my_api", "My Api Scope"),
+            new ApiResource("my_api", "My Api")
+            {
+                Scopes = { "my_api.access", "shared_scope" }
+            },
+            new ApiResource("other_api", "Some Other Api")
+            {
+                Scopes = { "other_api.access", "shared_scope" }
+            },
         };
         
-        // Will populate the `aud` property with APIs that have the requested scope.
-        internal static IEnumerable<ApiResource> GetApis() => new List<ApiResource>
+        internal static IEnumerable<ApiScope> GetScopes() => new[]
         {
-            // new ApiResource("my_api", "My Api")
-            // {
-            //     Scopes = { "my_api" }
-            // },
-            new ApiResource("another_api", "Some other api")
-            {
-                Scopes = { "my_api" }
-            },
+            new ApiScope("my_api.access", "Access to MyApi"),
+            new ApiScope("shared_scope", "Some shared scope"),
+            new ApiScope("other_api.access", "Access to Other Api"), 
         };
 
         internal static IEnumerable<Client> GetClients() => new List<Client>
         {
             new Client
             {
-                ClientId = "my_client",
-                ClientSecrets = { new Secret("my_secret".ToSha256()) },
+                ClientId = "machine_to_machine",
+                ClientSecrets = { new Secret("machine_to_machine_secret".ToSha256()) },
                 AllowedGrantTypes = GrantTypes.ClientCredentials,
-                AllowedScopes = { "my_api" }
+                AllowedScopes = { "my_api.access", "shared_scope" }
             }
         };
     }

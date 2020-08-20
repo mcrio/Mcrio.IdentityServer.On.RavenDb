@@ -130,7 +130,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
                 .AnyAsync().GetAwaiter().GetResult();
             if (!hasApiResources)
             {
-                foreach (ApiResource apiResource in TestData.GetApis())
+                foreach (ApiResource apiResource in TestData.GetApiResources())
                 {
                     apiResourceStoreAdditions.CreateApiResourceAsync(apiResource).GetAwaiter().GetResult();
                 }

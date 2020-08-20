@@ -8,10 +8,10 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.MyApi.Controllers
         [HttpGet("/")]
         public string Index()
         {
-            return "Hello my friend... No need to authenticate to read this. Try /super-secret";
+            return "Hello my friend... No need to authenticate to read this. Try /just-authenticated";
         }
         
-        [HttpGet("/super-secret")]
+        [HttpGet("/just-authenticated")]
         [Authorize]
         public string SuperSecret()
         {
