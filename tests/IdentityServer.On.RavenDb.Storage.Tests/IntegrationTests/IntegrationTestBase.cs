@@ -27,7 +27,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests
         {
             documentStore.Conventions.FindCollectionName = type =>
             {
-                return RavenDbConventions.GetIdentityServerCollectionName(type)
+                return IdentityServerRavenDbConventions.TryGetCollectionName(type)
                        ?? DocumentConventions.DefaultGetCollectionName(type);
             };
         }

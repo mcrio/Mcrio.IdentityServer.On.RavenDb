@@ -9,7 +9,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Mcrio.AspNetCore.Identity.On.RavenDb" Version="1.0.0" />
+      <PackageReference Include="IdentityServer4.AspNetIdentity" Version="4.0.4" />
+      <PackageReference Include="Mcrio.AspNetCore.Identity.On.RavenDb" Version="1.0.2" />
+      <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="3.1.7" />
     </ItemGroup>
 
     <ItemGroup>

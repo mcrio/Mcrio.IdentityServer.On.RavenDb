@@ -1,0 +1,32 @@
+@model LoginViewModel
+
+<h2>Login</h2>
+
+<form asp-controller="Auth" asp-action="Login" method="post">
+    <div>
+        <label>Username</label>
+        <input asp-for="Username"/>
+        <span asp-validation-for="Username"></span>
+    </div>
+    <div>
+        <label>Password</label>
+        <input asp-for="Password" type="password"/>
+        <span asp-validation-for="Password"></span>
+    </div>
+    <div>
+        <input type="hidden" asp-for="ReturnUrl">
+        <button type="submit">Login</button>
+    </div>
+    <div asp-validation-summary="All"></div>
+    @if (!string.IsNullOrEmpty(Model.Error))
+    {
+        <p style="color:red">Error: @Model.Error</p>
+    }
+    <p>
+        Try: <strong>bob:Pass123$</strong> or <strong>alice:Pass123$</strong>
+    </p>
+</form>
+
+<p>
+    <a asp-controller="Auth" asp-action="Register" asp-route-returnUrl="@Model.ReturnUrl">Register</a>
+</p>

@@ -15,7 +15,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Cors
         private readonly ILogger<CorsPolicyService> _logger;
 
         public CorsPolicyService(
-            DocumentSessionProvider documentSessionProvider,
+            IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             ILogger<CorsPolicyService> logger)
         {
             /*
@@ -23,7 +23,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Cors
              * need to pull it through the IHttpContextAccessor because of https://github.com/aspnet/CORS/issues/105
              * (per official EF core implementation comment)
              */
-            _documentSession = documentSessionProvider();
+            _documentSession = identityServerDocumentSessionProvider();
             _logger = logger;
         }
 

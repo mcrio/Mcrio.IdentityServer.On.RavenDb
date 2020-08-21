@@ -13,6 +13,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.TokenCleanup
 {
     /// <summary>
     /// Helper to periodically cleanup expired persisted grants.
+    /// todo: Replace this with RavenDB document expiration feature https://ravendb.net/docs/article-page/5.0/csharp/server/extensions/expiration
     /// </summary>
     public class TokenCleanupService : ITokenCleanupService
     {
@@ -23,15 +24,15 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.TokenCleanup
         /// <summary>
         /// Initializes a new instance of the <see cref="TokenCleanupService"/> class.
         /// </summary>
-        /// <param name="documentSessionProvider">Provider the document session.</param>
+        /// <param name="identityServerDocumentSessionProvider">Provider the document session.</param>
         /// <param name="tokenCleanupOptions">Options.</param>
         /// <param name="logger">Logger.</param>
         public TokenCleanupService(
-            DocumentSessionProvider documentSessionProvider,
+            IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             IOptionsSnapshot<TokenCleanupOptions> tokenCleanupOptions,
             ILogger<TokenCleanupService> logger)
         {
-            _documentSession = documentSessionProvider();
+            _documentSession = identityServerDocumentSessionProvider();
             _logger = logger;
             _tokenCleanupOptions = tokenCleanupOptions;
         }

@@ -15,7 +15,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.MyApi.Controllers
         [Authorize]
         public string SuperSecret()
         {
-            return "Hi there from the super secret controller action.";
+            return "Hi there from MyApi and the super secret controller action.";
         }
     }
 }

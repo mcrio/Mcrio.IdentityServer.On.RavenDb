@@ -25,11 +25,11 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
 
         public DeviceFlowStore(
             IPersistentGrantSerializer serializer,
-            DocumentSessionProvider documentSessionProvider,
+            IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             IIdentityServerStoreMapper mapper,
             ILogger<DeviceFlowStore> logger)
         {
-            _documentSession = documentSessionProvider();
+            _documentSession = identityServerDocumentSessionProvider();
             _serializer = serializer;
             _mapper = mapper;
             _logger = logger;

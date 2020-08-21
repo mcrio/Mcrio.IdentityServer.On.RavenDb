@@ -12,9 +12,9 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Mappers
         private readonly IDocumentStore _documentStore;
         private readonly IMapper _mapper;
 
-        public IdentityServerStoreMapper(DocumentSessionProvider documentSessionProvider)
+        public IdentityServerStoreMapper(IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider)
         {
-            _documentStore = documentSessionProvider().Advanced.DocumentStore;
+            _documentStore = identityServerDocumentSessionProvider().Advanced.DocumentStore;
 
             var mapperConfiguration = new MapperConfiguration(expression =>
             {

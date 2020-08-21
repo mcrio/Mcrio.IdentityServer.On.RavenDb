@@ -66,7 +66,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.TokenCleanup
 
                 while (!stoppingToken.IsCancellationRequested)
                 {
-                    _logger.LogDebug("TokenCleanupBackgroundService is doing background work.");
+                    _logger.LogInformation("TokenCleanupBackgroundService is doing background work.");
 
                     await CleanupExpiredGrantsAsync(stoppingToken)
                         .ConfigureAwait(false);

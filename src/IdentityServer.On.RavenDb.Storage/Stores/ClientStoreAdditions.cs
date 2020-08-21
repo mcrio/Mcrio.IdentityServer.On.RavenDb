@@ -17,11 +17,11 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
         private readonly ILogger<ClientStore> _logger;
 
         public ClientStoreAdditions(
-            DocumentSessionProvider documentSessionProvider,
+            IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             IIdentityServerStoreMapper mapper,
             ILogger<ClientStore> logger)
         {
-            _documentSession = documentSessionProvider();
+            _documentSession = identityServerDocumentSessionProvider();
             _mapper = mapper;
             _logger = logger;
         }

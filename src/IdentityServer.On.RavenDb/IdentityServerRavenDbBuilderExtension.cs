@@ -18,7 +18,7 @@ namespace Mcrio.IdentityServer.On.RavenDb
         /// <returns>Identity server builder.</returns>
         public static IIdentityServerBuilder AddRavenDbStores(
             this IIdentityServerBuilder builder,
-            Func<IServiceProvider, DocumentSessionProvider> documentSessionProvider,
+            Func<IServiceProvider, IdentityServerDocumentSessionProvider> documentSessionProvider,
             Action<TokenCleanupOptions>? tokenCleanupOptionsAction = null,
             bool addConfigurationStore = true,
             bool addConfigurationStoreCache = true,

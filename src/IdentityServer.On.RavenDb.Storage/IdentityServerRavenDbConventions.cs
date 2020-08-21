@@ -6,46 +6,54 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage
     /// <summary>
     /// Method to produce predefined collection names for implemented entity types.
     /// </summary>
-    public static class RavenDbConventions
+    public static class IdentityServerRavenDbConventions
     {
         /// <summary>
         /// Get collection name for Identity Server on RavenDb known types.
         /// </summary>
         /// <param name="type">Object type to get the collection for.</param>
+        /// <param name="collectionName">Optional collection name if found.</param>
         /// <returns>Default collection name if known type otherwise Null.</returns>
-        public static string? GetIdentityServerCollectionName(Type type)
+        public static bool TryGetCollectionName(Type type, out string? collectionName)
         {
             if (typeof(Client).IsAssignableFrom(type))
             {
-                return "Apiclients";
+                collectionName = "Apiclients";
+                return true;
             }
 
             if (typeof(ApiResource).IsAssignableFrom(type))
             {
-                return "Apiresources";
+                collectionName = "Apiresources";
+                return true;
             }
 
             if (typeof(ApiScope).IsAssignableFrom(type))
             {
-                return "Apiscopes";
+                collectionName = "Apiscopes";
+                return true;
             }
 
             if (typeof(DeviceFlowCode).IsAssignableFrom(type))
             {
-                return "Apideviceflowcodes";
+                collectionName = "Apideviceflows";
+                return true;
             }
 
             if (typeof(IdentityResource).IsAssignableFrom(type))
             {
-                return "Apiidentresources";
+                collectionName = "Apiidentresources";
+                return true;
             }
 
             if (typeof(PersistedGrant).IsAssignableFrom(type))
             {
-                return "Apigrants";
+                collectionName = "Apigrants";
+                return true;
             }
 
-            return null;
+            collectionName = null;
+            return false;
         }
     }
 }

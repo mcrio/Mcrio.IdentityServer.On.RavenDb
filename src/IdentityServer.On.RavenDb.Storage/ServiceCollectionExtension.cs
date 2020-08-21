@@ -17,7 +17,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage
     /// Delegate which provides a <see cref="IAsyncDocumentSession"/> to be used as a RavenDB document session.
     /// </summary>
     /// <returns>RavenDB async document session.</returns>
-    public delegate IAsyncDocumentSession DocumentSessionProvider();
+    public delegate IAsyncDocumentSession IdentityServerDocumentSessionProvider();
 
     /// <summary>
     /// Provides extension methods for registering required services to the DI container.
@@ -26,7 +26,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage
     {
         public static IServiceCollection IdentityServerAddRavenDbServices(
             this IServiceCollection serviceCollection,
-            Func<IServiceProvider, DocumentSessionProvider> documentSessionProvider)
+            Func<IServiceProvider, IdentityServerDocumentSessionProvider> documentSessionProvider)
         {
             if (documentSessionProvider == null)
             {

@@ -22,11 +22,11 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
         private readonly ILogger<PersistedGrantStore> _logger;
 
         public PersistedGrantStore(
-            DocumentSessionProvider documentSessionProvider,
+            IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             IIdentityServerStoreMapper mapper,
             ILogger<PersistedGrantStore> logger)
         {
-            _documentSession = documentSessionProvider();
+            _documentSession = identityServerDocumentSessionProvider();
             _mapper = mapper;
             _logger = logger;
         }

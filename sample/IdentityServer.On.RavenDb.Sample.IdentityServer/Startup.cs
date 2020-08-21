@@ -1,20 +1,16 @@
-using System;
-using IdentityServer4.Models;
+using Mcrio.AspNetCore.Identity.On.RavenDb;
+using Mcrio.AspNetCore.Identity.On.RavenDb.Model.Role;
+using Mcrio.AspNetCore.Identity.On.RavenDb.Model.User;
 using Mcrio.IdentityServer.On.RavenDb.Storage;
-using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Advanced;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Raven.Client.Documents;
 using Raven.Client.Documents.Conventions;
-using Raven.Client.Documents.Operations;
 using Raven.Client.Documents.Session;
-using Raven.Client.Exceptions;
-using Raven.Client.Exceptions.Database;
-using Raven.Client.ServerWide;
-using Raven.Client.ServerWide.Operations;
 
 namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
 {
@@ -27,12 +23,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
 
         public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
-        // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllersWithViews();
-
             // RAVENDB Store
             string databaseName = Configuration.GetSection("RavenDbDatabase").Value;
             var documentStore = new DocumentStore
@@ -41,21 +33,61 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
                 Database = databaseName,
                 Conventions =
                 {
-                    FindCollectionName = type => RavenDbConventions.GetIdentityServerCollectionName(type) ??
-                                                 DocumentConventions.DefaultGetCollectionName(type)
+                    FindCollectionName = type =>
+                    {
+                        if (IdentityServerRavenDbConventions.TryGetCollectionName(
+                            type,
+                            out string? identityServerCollectionName))
+                        {
+                            return identityServerCollectionName;
+                        }
+
+                        if (IdentityRavenDbConventions.TryGetCollectionName<RavenIdentityUser, RavenIdentityRole>(
+                            type,
+                            out string? identityCollectionName))
+                        {
+                            return identityCollectionName;
+                        }
+
+                        return DocumentConventions.DefaultGetCollectionName(type);
+                    }
                 }
             };
             documentStore.Initialize();
-            EnsureDatabaseExists(documentStore, databaseName, true);
+            documentStore.EnsureDatabaseExists(databaseName, true);
 
-            // RAVENDB Services
+            // RAVENDB Register services
             services.AddSingleton<IDocumentStore>(documentStore);
             services.AddScoped<IAsyncDocumentSession>(serviceProvider => serviceProvider
                 .GetService<IDocumentStore>()
                 .OpenAsyncSession());
 
+            // ASP Core Identity using RavenDB stores. Must be before identity server.
+            services
+                .AddIdentity<RavenIdentityUser, RavenIdentityRole>(config =>
+                {
+                    config.SignIn.RequireConfirmedEmail = false;
+                    config.User.RequireUniqueEmail = false;
+                    config.Password.RequireDigit = false;
+                    config.Password.RequiredLength = 1;
+                    config.Password.RequireLowercase = false;
+                    config.Password.RequireUppercase = false;
+                    config.Password.RequireNonAlphanumeric = false;
+                    config.Password.RequiredUniqueChars = 1;
+                })
+                .AddRavenDbStores(serviceProvider => serviceProvider.GetRequiredService<IAsyncDocumentSession>)
+                .AddDefaultTokenProviders();
+
+            services.ConfigureApplicationCookie(config =>
+            {
+                config.Cookie.Name = "identity_server_cookie";
+                config.LoginPath = "/login";
+                config.LogoutPath = "/logout";
+            });
+
             // IDENTITY SERVER
-            services.AddIdentityServer()
+            services
+                .AddIdentityServer()
                 .AddRavenDbStores(
                     serviceProvider => serviceProvider.GetRequiredService<IAsyncDocumentSession>,
                     tokenCleanupOptions => Configuration
@@ -65,7 +97,14 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
                     addConfigurationStore: true,
                     addConfigurationStoreCache: true
                 )
+                .AddAspNetIdentity<RavenIdentityUser>()
                 .AddDeveloperSigningCredential();
+
+            // Add MVC
+            services
+                .AddControllersWithViews()
+                .AddRazorRuntimeCompilation();
+            
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -81,82 +120,6 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
             app.UseIdentityServer();
 
             app.UseEndpoints(endpoints => { endpoints.MapDefaultControllerRoute(); });
-
-            AddIdentityServerTestData(app);
-        }
-
-        private static void EnsureDatabaseExists(
-            IDocumentStore store,
-            string? database = null,
-            bool createDatabaseIfNotExists = true)
-        {
-            database ??= store.Database;
-
-            if (string.IsNullOrWhiteSpace(database))
-                throw new ArgumentException("Value cannot be null or whitespace.", nameof(database));
-
-            try
-            {
-                store.Maintenance.ForDatabase(database).Send(new GetStatisticsOperation());
-            }
-            catch (DatabaseDoesNotExistException)
-            {
-                if (createDatabaseIfNotExists == false)
-                    throw;
-
-                try
-                {
-                    store.Maintenance.Server.Send(new CreateDatabaseOperation(new DatabaseRecord(database)));
-                }
-                catch (ConcurrencyException)
-                {
-                    // The database was already created before calling CreateDatabaseOperation
-                }
-            }
-        }
-
-        private static void AddIdentityServerTestData(IApplicationBuilder app)
-        {
-            using IServiceScope scope = app.ApplicationServices.CreateScope();
-
-            IResourceStoreAdditions apiResourceStoreAdditions = scope.ServiceProvider.GetRequiredService<IResourceStoreAdditions>();
-            IClientStoreAdditions clientStoreAdditions = scope.ServiceProvider.GetRequiredService<IClientStoreAdditions>();
-
-            IAsyncDocumentSession documentSession =
-                scope.ServiceProvider.GetRequiredService<DocumentSessionProvider>()();
-
-            bool hasApiResources = documentSession
-                .Query<Mcrio.IdentityServer.On.RavenDb.Storage.Entities.ApiResource>()
-                .AnyAsync().GetAwaiter().GetResult();
-            if (!hasApiResources)
-            {
-                foreach (ApiResource apiResource in TestData.GetApiResources())
-                {
-                    apiResourceStoreAdditions.CreateApiResourceAsync(apiResource).GetAwaiter().GetResult();
-                }
-            }
-
-            bool hasClients = documentSession
-                .Query<Mcrio.IdentityServer.On.RavenDb.Storage.Entities.Client>()
-                .AnyAsync().GetAwaiter().GetResult();
-            if (!hasClients)
-            {
-                foreach (Client client in TestData.GetClients())
-                {
-                    clientStoreAdditions.CreateAsync(client).GetAwaiter().GetResult();
-                }
-            }
-            
-            bool hasScopes = documentSession
-                .Query<Mcrio.IdentityServer.On.RavenDb.Storage.Entities.ApiScope>()
-                .AnyAsync().GetAwaiter().GetResult();
-            if (!hasScopes)
-            {
-                foreach (ApiScope apiScope in TestData.GetScopes())
-                {
-                    apiResourceStoreAdditions.CreateApiScopeAsync(apiScope).GetAwaiter().GetResult();
-                }
-            }
         }
     }
 }

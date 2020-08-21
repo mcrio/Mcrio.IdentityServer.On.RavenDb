@@ -1,0 +1,8 @@
+@model Mcrio.IdentityServer.On.RavenDb.Sample.MvcClient.Controllers.ViewModels.CallApiViewModel
+
+<strong>Call API with access token</strong>
+
+<p>Api response: @(Model.ApiResponse ?? "there was an error")</p>
+<p>Errors: @(Model.Error??"no errors")</p>
+
+<a asp-controller="Home" asp-action="SuperSecret">Go back to Super secret</a>
