@@ -3,7 +3,7 @@ using IdentityServer4.Models;
 using Mcrio.AspNetCore.Identity.On.RavenDb;
 using Mcrio.AspNetCore.Identity.On.RavenDb.Model.User;
 using Mcrio.IdentityServer.On.RavenDb.Storage;
-using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Advanced;
+using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Additions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;

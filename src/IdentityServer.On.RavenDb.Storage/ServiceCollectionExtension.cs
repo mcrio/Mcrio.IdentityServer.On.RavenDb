@@ -1,14 +1,9 @@
 using System;
-using IdentityServer4.Services;
-using IdentityServer4.Stores;
-using Mcrio.IdentityServer.On.RavenDb.Storage.Cors;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Mappers;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Stores;
-using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Advanced;
-using Mcrio.IdentityServer.On.RavenDb.Storage.TokenCleanup;
+using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Additions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Raven.Client.Documents.Linq;
 using Raven.Client.Documents.Session;
 
 namespace Mcrio.IdentityServer.On.RavenDb.Storage

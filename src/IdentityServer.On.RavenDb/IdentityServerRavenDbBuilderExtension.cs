@@ -31,6 +31,7 @@ namespace Mcrio.IdentityServer.On.RavenDb
                 builder.AddClientStore<ClientStore>();
                 builder.AddResourceStore<ResourceStore>();
                 builder.AddCorsPolicyService<CorsPolicyService>();
+
                 builder.Services.IdentityServerAddConfigurationStoreAdditions();
             }
 

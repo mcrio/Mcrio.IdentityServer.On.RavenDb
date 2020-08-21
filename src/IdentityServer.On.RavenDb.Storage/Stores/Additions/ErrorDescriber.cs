@@ -1,4 +1,4 @@
-namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Advanced
+namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Additions
 {
     internal static class ErrorDescriber
     {

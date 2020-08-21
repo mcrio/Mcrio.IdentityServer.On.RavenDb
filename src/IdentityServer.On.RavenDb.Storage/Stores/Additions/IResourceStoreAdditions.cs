@@ -1,9 +1,8 @@
 using System.Threading;
 using System.Threading.Tasks;
 using IdentityServer4.Models;
-using IdentityServer4.Stores;
 
-namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Advanced
+namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Additions
 {
     public interface IResourceStoreAdditions
     {

@@ -7,7 +7,7 @@ using IdentityServer4.Stores.Serialization;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Cors;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Mappers;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Stores;
-using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Advanced;
+using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Additions;
 using Mcrio.IdentityServer.On.RavenDb.Storage.TokenCleanup;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;

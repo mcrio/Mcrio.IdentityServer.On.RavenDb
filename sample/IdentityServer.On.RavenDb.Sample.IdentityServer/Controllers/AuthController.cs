@@ -1,4 +1,3 @@
-using System.Linq;
 using System.Threading.Tasks;
 using Mcrio.AspNetCore.Identity.On.RavenDb.Model.User;
 using Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer.Controllers.ViewModels;

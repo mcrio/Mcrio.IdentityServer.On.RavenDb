@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using IdentityServer4.Models;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Mappers;
-using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Advanced;
+using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Additions;
 using Microsoft.Extensions.Logging;
 using Raven.Client.Documents.Session;
 using Raven.Client.Exceptions;

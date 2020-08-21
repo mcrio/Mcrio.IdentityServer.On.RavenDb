@@ -5,7 +5,7 @@ using FluentAssertions;
 using IdentityModel;
 using IdentityServer4.Models;
 using IdentityServer4.Stores;
-using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Advanced;
+using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Additions;
 using Xunit;
 using Xunit.Sdk;
 using ApiScope = Mcrio.IdentityServer.On.RavenDb.Storage.Entities.ApiScope;

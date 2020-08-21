@@ -6,7 +6,7 @@ using FluentAssertions;
 using IdentityModel;
 using IdentityServer4.Models;
 using IdentityServer4.Stores;
-using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Advanced;
+using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Additions;
 using Xunit;
 
 namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
