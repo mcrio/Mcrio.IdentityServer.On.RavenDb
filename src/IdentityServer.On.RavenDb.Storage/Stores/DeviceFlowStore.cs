@@ -9,7 +9,9 @@ using Mcrio.IdentityServer.On.RavenDb.Storage.Mappers;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Advanced;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Exceptions;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Extensions;
+using Mcrio.IdentityServer.On.RavenDb.Storage.TokenCleanup;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Raven.Client.Documents.Operations.CompareExchange;
 using Raven.Client.Documents.Session;
 using ConcurrencyException = Raven.Client.Exceptions.ConcurrencyException;
@@ -22,17 +24,20 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
         private readonly IPersistentGrantSerializer _serializer;
         private readonly IIdentityServerStoreMapper _mapper;
         private readonly ILogger<DeviceFlowStore> _logger;
+        private readonly IOptionsSnapshot<OperationalStoreOptions> _operationalStoreOptions;
 
         public DeviceFlowStore(
             IPersistentGrantSerializer serializer,
             IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             IIdentityServerStoreMapper mapper,
-            ILogger<DeviceFlowStore> logger)
+            ILogger<DeviceFlowStore> logger,
+            IOptionsSnapshot<OperationalStoreOptions> operationalStoreOptions)
         {
             _documentSession = identityServerDocumentSessionProvider();
             _serializer = serializer;
             _mapper = mapper;
             _logger = logger;
+            _operationalStoreOptions = operationalStoreOptions;
         }
 
         /// <summary>
@@ -92,6 +97,11 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                         deviceFlowCodeEntity.Id
                     )
                     .ConfigureAwait(false);
+                _documentSession.ManageDocumentExpiresMetadata(
+                    _operationalStoreOptions.Value,
+                    deviceFlowCodeEntity,
+                    deviceFlowCodeEntity.Expiration
+                );
                 await _documentSession.SaveChangesAsync().ConfigureAwait(false);
                 saveSuccess = true;
             }
@@ -199,6 +209,11 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             {
                 string changeVector = _documentSession.Advanced.GetChangeVectorFor(existingEntity);
                 await _documentSession.StoreAsync(existingEntity, changeVector, existingEntity.Id);
+                _documentSession.ManageDocumentExpiresMetadata(
+                    _operationalStoreOptions.Value,
+                    existingEntity,
+                    existingEntity.Expiration
+                );
                 await _documentSession.SaveChangesAsync().ConfigureAwait(false);
             }
             catch (ConcurrencyException)

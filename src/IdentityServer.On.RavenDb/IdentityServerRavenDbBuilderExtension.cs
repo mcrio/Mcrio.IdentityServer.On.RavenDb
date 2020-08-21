@@ -19,7 +19,7 @@ namespace Mcrio.IdentityServer.On.RavenDb
         public static IIdentityServerBuilder AddRavenDbStores(
             this IIdentityServerBuilder builder,
             Func<IServiceProvider, IdentityServerDocumentSessionProvider> documentSessionProvider,
-            Action<TokenCleanupOptions>? tokenCleanupOptionsAction = null,
+            Action<OperationalStoreOptions>? operationalStoreOptions = null,
             bool addConfigurationStore = true,
             bool addConfigurationStoreCache = true,
             bool addOperationalStore = true)
@@ -46,9 +46,9 @@ namespace Mcrio.IdentityServer.On.RavenDb
 
             if (addOperationalStore)
             {
-                builder.Services.Configure<TokenCleanupOptions>(options =>
+                builder.Services.Configure<OperationalStoreOptions>(options =>
                 {
-                    tokenCleanupOptionsAction?.Invoke(options);
+                    operationalStoreOptions?.Invoke(options);
                 });
 
                 builder.AddPersistedGrantStore<PersistedGrantStore>();

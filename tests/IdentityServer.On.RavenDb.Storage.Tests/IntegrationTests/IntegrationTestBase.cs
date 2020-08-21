@@ -27,13 +27,17 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests
         {
             documentStore.Conventions.FindCollectionName = type =>
             {
-                return IdentityServerRavenDbConventions.TryGetCollectionName(type)
-                       ?? DocumentConventions.DefaultGetCollectionName(type);
+                if (IdentityServerRavenDbConventions.TryGetCollectionName(type, out string? collectionName))
+                {
+                    return collectionName;
+                }
+
+                return DocumentConventions.DefaultGetCollectionName(type);
             };
         }
 
         protected ServiceScope InitializeServices(
-            Action<TokenCleanupOptions>? tokenCleanupOptionsAction = null)
+            Action<OperationalStoreOptions>? operationalStoreOptions = null)
         {
             _documentStore ??= GetDocumentStore();
 
@@ -54,8 +58,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests
             );
 
             // Identity Server operational services
-            serviceCollection.Configure<TokenCleanupOptions>(
-                cleanUpOptions => tokenCleanupOptionsAction?.Invoke(cleanUpOptions)
+            serviceCollection.Configure<OperationalStoreOptions>(
+                cleanUpOptions => operationalStoreOptions?.Invoke(cleanUpOptions)
             );
             serviceCollection.AddTransient<IPersistedGrantStore, PersistedGrantStore>();
             serviceCollection.AddTransient<IDeviceFlowStore, DeviceFlowStore>();

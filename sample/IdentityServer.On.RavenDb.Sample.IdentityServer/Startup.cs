@@ -90,9 +90,9 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
                 .AddIdentityServer()
                 .AddRavenDbStores(
                     serviceProvider => serviceProvider.GetRequiredService<IAsyncDocumentSession>,
-                    tokenCleanupOptions => Configuration
-                        .GetSection("IdentityServerTokenCleanup")
-                        .Bind(tokenCleanupOptions),
+                    operationalStoreOptions => Configuration
+                        .GetSection("OperationalStoreOptions")
+                        .Bind(operationalStoreOptions),
                     addOperationalStore: true,
                     addConfigurationStore: true,
                     addConfigurationStoreCache: true

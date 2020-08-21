@@ -13,23 +13,23 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.TokenCleanup
     /// </summary>
     public class TokenCleanupBackgroundService : BackgroundService
     {
-        private readonly IOptions<TokenCleanupOptions> _tokenCleanupOptions;
+        private readonly IOptions<OperationalStoreOptions> _operationalStoreOptions;
         private readonly ILogger<TokenCleanupBackgroundService> _logger;
         private readonly IServiceProvider _serviceProvider;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TokenCleanupBackgroundService"/> class.
         /// </summary>
-        /// <param name="tokenCleanupOptions">Options.</param>
+        /// <param name="operationalStoreOptions">Options.</param>
         /// <param name="logger">Logger.</param>
         /// <param name="serviceProvider">DI service provider.</param>
         public TokenCleanupBackgroundService(
-            IOptions<TokenCleanupOptions> tokenCleanupOptions,
+            IOptions<OperationalStoreOptions> operationalStoreOptions,
             ILogger<TokenCleanupBackgroundService> logger,
             IServiceProvider serviceProvider
         )
         {
-            _tokenCleanupOptions = tokenCleanupOptions;
+            _operationalStoreOptions = operationalStoreOptions;
             _logger = logger;
             _serviceProvider = serviceProvider;
         }
@@ -43,7 +43,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.TokenCleanup
         {
             _logger.LogDebug("TokenCleanupBackgroundService service is starting...");
 
-            if (!_tokenCleanupOptions.Value.EnableTokenCleanup)
+            if (!_operationalStoreOptions.Value.TokenCleanup.EnableTokenCleanupBackgroundService)
             {
                 _logger.LogDebug("TokenCleanupBackgroundService is disabled.");
                 return;
@@ -52,14 +52,14 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.TokenCleanup
             try
             {
                 if (!stoppingToken.IsCancellationRequested &&
-                    _tokenCleanupOptions.Value.TokenCleanupStartupDelaySec > 0)
+                    _operationalStoreOptions.Value.TokenCleanup.CleanupStartupDelaySec > 0)
                 {
                     _logger.LogDebug(
                         "TokenCleanupBackgroundService executing startup delay for {} seconds.",
-                        _tokenCleanupOptions.Value.TokenCleanupStartupDelaySec
+                        _operationalStoreOptions.Value.TokenCleanup.CleanupStartupDelaySec
                     );
                     await Task.Delay(
-                        TimeSpan.FromSeconds(_tokenCleanupOptions.Value.TokenCleanupStartupDelaySec),
+                        TimeSpan.FromSeconds(_operationalStoreOptions.Value.TokenCleanup.CleanupStartupDelaySec),
                         stoppingToken
                     );
                 }
@@ -72,7 +72,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.TokenCleanup
                         .ConfigureAwait(false);
 
                     await Task
-                        .Delay(TimeSpan.FromSeconds(_tokenCleanupOptions.Value.TokenCleanupIntervalSec), stoppingToken)
+                        .Delay(TimeSpan.FromSeconds(_operationalStoreOptions.Value.TokenCleanup.CleanupIntervalSec), stoppingToken)
                         .ConfigureAwait(false);
                 }
             }

@@ -6,7 +6,10 @@ using IdentityServer4.Models;
 using IdentityServer4.Stores;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Mappers;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Advanced;
+using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Extensions;
+using Mcrio.IdentityServer.On.RavenDb.Storage.TokenCleanup;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Raven.Client.Documents;
 using Raven.Client.Documents.Linq;
 using Raven.Client.Documents.Operations;
@@ -20,15 +23,18 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
         private readonly IAsyncDocumentSession _documentSession;
         private readonly IIdentityServerStoreMapper _mapper;
         private readonly ILogger<PersistedGrantStore> _logger;
+        private readonly IOptionsSnapshot<OperationalStoreOptions> _operationalStoreOptions;
 
         public PersistedGrantStore(
             IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             IIdentityServerStoreMapper mapper,
-            ILogger<PersistedGrantStore> logger)
+            ILogger<PersistedGrantStore> logger,
+            IOptionsSnapshot<OperationalStoreOptions> operationalStoreOptions)
         {
             _documentSession = identityServerDocumentSessionProvider();
             _mapper = mapper;
             _logger = logger;
+            _operationalStoreOptions = operationalStoreOptions;
         }
 
         public async Task StoreAsync(PersistedGrant grant)
@@ -99,6 +105,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             return grants;
         }
 
+        /// <inheritdoc />
         public async Task RemoveAsync(string key)
         {
             if (string.IsNullOrWhiteSpace(key))
@@ -172,7 +179,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
         }
 
-        private static bool CheckRequiredFields(Entities.PersistedGrant persistedGrant, out string errorMessage)
+        protected virtual bool CheckRequiredFields(Entities.PersistedGrant persistedGrant, out string errorMessage)
         {
             errorMessage = string.Empty;
 
@@ -215,11 +222,16 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             return true;
         }
 
-        private async Task<StoreResult> CreateAsync(Entities.PersistedGrant entity)
+        protected virtual async Task<StoreResult> CreateAsync(Entities.PersistedGrant entity)
         {
             try
             {
                 await _documentSession.StoreAsync(entity, string.Empty, entity.Id).ConfigureAwait(false);
+                _documentSession.ManageDocumentExpiresMetadata(
+                    _operationalStoreOptions.Value,
+                    entity,
+                    entity.Expiration
+                );
                 await _documentSession.SaveChangesAsync().ConfigureAwait(false);
                 return StoreResult.Success();
             }
@@ -245,7 +257,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
         }
 
-        private async Task<StoreResult> UpdateAsync(
+        protected virtual async Task<StoreResult> UpdateAsync(
             Entities.PersistedGrant newGrantData,
             Entities.PersistedGrant entityInSession)
         {
@@ -258,6 +270,11 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                 await _documentSession
                     .StoreAsync(entityInSession, changeVector, entityId)
                     .ConfigureAwait(false);
+                _documentSession.ManageDocumentExpiresMetadata(
+                    _operationalStoreOptions.Value,
+                    entityInSession,
+                    entityInSession.Expiration
+                );
                 await _documentSession.SaveChangesAsync().ConfigureAwait(false);
                 return StoreResult.Success();
             }
@@ -281,7 +298,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
         }
 
-        private static IRavenQueryable<Entities.PersistedGrant> ApplyFilter(
+        protected virtual IRavenQueryable<Entities.PersistedGrant> ApplyFilter(
             IRavenQueryable<Entities.PersistedGrant> query,
             PersistedGrantFilter filter)
         {

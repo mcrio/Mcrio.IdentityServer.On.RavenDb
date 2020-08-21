@@ -5,7 +5,9 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using IdentityServer4.Models;
 using IdentityServer4.Stores;
+using Raven.Client;
 using Raven.Client.Documents;
+using Raven.Client.Documents.Session;
 using Xunit;
 
 namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
@@ -381,7 +383,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
         [Fact]
         public async Task Store_should_update_record_if_key_already_exists()
         {
-            var persistedGrant = CreateTestObject();
+            PersistedGrant persistedGrant = CreateTestObject();
             await InitializeServices().PersistedGrantStore.StoreAsync(persistedGrant);
 
             DateTime newDate = persistedGrant.Expiration!.Value.AddHours(1);
@@ -398,6 +400,105 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             }
         }
 
+        [Fact]
+        public async Task ShouldAddAndUpdateExpiresDocumentMetadataIfOptionEnabled()
+        {
+            PersistedGrant persistedGrant = CreateTestObject();
+            await InitializeServices(
+                tokenOptions => tokenOptions.SetRavenDbDocumentExpiresMetadata = true
+            ).PersistedGrantStore.StoreAsync(persistedGrant);
+
+            {
+                ServiceScope scope = InitializeServices();
+                Entities.PersistedGrant foundGrant = await scope
+                    .DocumentSession
+                    .Query<Entities.PersistedGrant>()
+                    .FirstOrDefaultAsync(x => x.Key == persistedGrant.Key);
+                foundGrant.Should().NotBeNull();
+                IMetadataDictionary metadata = scope.DocumentSession.Advanced.GetMetadataFor(foundGrant);
+                metadata.Should().ContainKey(Constants.Documents.Metadata.Expires);
+                metadata[Constants.Documents.Metadata.Expires]
+                    .Should()
+                    .Be(persistedGrant.Expiration!.Value.ToUniversalTime().ToString("O"));
+            }
+
+            var newExpiryDate = new DateTime(2021, 08, 20, 0, 0, 0, DateTimeKind.Utc);
+            persistedGrant.Expiration = newExpiryDate;
+            await InitializeServices(
+                tokenOptions => tokenOptions.SetRavenDbDocumentExpiresMetadata = true
+            ).PersistedGrantStore.StoreAsync(persistedGrant);
+
+            {
+                ServiceScope scope = InitializeServices();
+                Entities.PersistedGrant foundGrant = await scope
+                    .DocumentSession
+                    .Query<Entities.PersistedGrant>()
+                    .FirstOrDefaultAsync(x => x.Key == persistedGrant.Key);
+                foundGrant.Should().NotBeNull();
+                IMetadataDictionary metadata = scope.DocumentSession.Advanced.GetMetadataFor(foundGrant);
+                metadata.Should().ContainKey(Constants.Documents.Metadata.Expires);
+                metadata[Constants.Documents.Metadata.Expires]
+                    .Should()
+                    .Be(newExpiryDate.ToUniversalTime().ToString("O"));
+            }
+
+            persistedGrant.Expiration = null;
+            await InitializeServices(
+                tokenOptions => tokenOptions.SetRavenDbDocumentExpiresMetadata = true
+            ).PersistedGrantStore.StoreAsync(persistedGrant);
+
+            {
+                ServiceScope scope = InitializeServices();
+                Entities.PersistedGrant foundGrant = await scope
+                    .DocumentSession
+                    .Query<Entities.PersistedGrant>()
+                    .FirstOrDefaultAsync(x => x.Key == persistedGrant.Key);
+                foundGrant.Should().NotBeNull();
+                IMetadataDictionary metadata = scope.DocumentSession.Advanced.GetMetadataFor(foundGrant);
+                metadata.Should().NotContainKey(Constants.Documents.Metadata.Expires);
+            }
+        }
+
+        [Fact]
+        public async Task ShouldNotAddExpiresDocumentMetadataOnStoreAndUpdateWhenOptionDisabled()
+        {
+            PersistedGrant persistedGrant = CreateTestObject();
+            await InitializeServices(
+                tokenOptions => tokenOptions.SetRavenDbDocumentExpiresMetadata = false
+            ).PersistedGrantStore.StoreAsync(persistedGrant);
+
+            {
+                ServiceScope scope = InitializeServices();
+                Entities.PersistedGrant foundGrant = await scope
+                    .DocumentSession
+                    .Query<Entities.PersistedGrant>()
+                    .FirstOrDefaultAsync(x => x.Key == persistedGrant.Key);
+                foundGrant.Should().NotBeNull();
+                IMetadataDictionary metadata = scope.DocumentSession.Advanced.GetMetadataFor(foundGrant);
+                metadata.Should().NotContainKey(
+                    Constants.Documents.Metadata.Expires,
+                    "token clean-up options disabled storing @expires metadata"
+                );
+            }
+
+            var newExpiryDate = new DateTime(2021, 08, 20, 0, 0, 0, DateTimeKind.Utc);
+            persistedGrant.Expiration = newExpiryDate;
+            await InitializeServices(
+                tokenOptions => tokenOptions.SetRavenDbDocumentExpiresMetadata = false
+            ).PersistedGrantStore.StoreAsync(persistedGrant);
+
+            {
+                ServiceScope scope = InitializeServices();
+                Entities.PersistedGrant foundGrant = await scope
+                    .DocumentSession
+                    .Query<Entities.PersistedGrant>()
+                    .FirstOrDefaultAsync(x => x.Key == persistedGrant.Key);
+                foundGrant.Should().NotBeNull();
+                IMetadataDictionary metadata = scope.DocumentSession.Advanced.GetMetadataFor(foundGrant);
+                metadata.Should().NotContainKey(Constants.Documents.Metadata.Expires);
+            }
+        }
+
         private static PersistedGrant CreateTestObject(
             string sub = null,
             string clientId = null,
@@ -411,8 +512,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 ClientId = clientId ?? Guid.NewGuid().ToString(),
                 SubjectId = sub ?? Guid.NewGuid().ToString(),
                 SessionId = sid ?? Guid.NewGuid().ToString(),
-                CreationTime = new DateTime(2016, 08, 01),
-                Expiration = new DateTime(2016, 08, 31),
+                CreationTime = new DateTime(2016, 08, 01, 0, 0, 0, DateTimeKind.Utc),
+                Expiration = new DateTime(2016, 08, 31, 0, 0, 0, DateTimeKind.Utc),
                 Data = Guid.NewGuid().ToString(),
             };
         }

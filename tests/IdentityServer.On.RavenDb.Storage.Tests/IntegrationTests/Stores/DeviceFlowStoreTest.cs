@@ -9,6 +9,7 @@ using IdentityServer4.Models;
 using IdentityServer4.Stores.Serialization;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Entities;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Exceptions;
+using Raven.Client;
 using Raven.Client.Documents;
 using Raven.Client.Documents.Session;
 using Xunit;
@@ -381,6 +382,129 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             var deviceCode = $"device_{Guid.NewGuid().ToString()}";
             await InitializeServices().DeviceFlowStore.RemoveByDeviceCodeAsync(deviceCode);
             await AssertCompareExchangeKeyDoesNotExistAsync($"identityserver/devicecode/{deviceCode}");
+        }
+
+        [Fact]
+        public async Task ShouldAddDocumentExpiresMetadataOnCreateAndUpdateIfOptionEnabled()
+        {
+            var testDeviceCode = $"device_{Guid.NewGuid().ToString()}";
+            var testUserCode = $"user_{Guid.NewGuid().ToString()}";
+
+            var deviceCode = new DeviceCode
+            {
+                ClientId = "device_flow",
+                RequestedScopes = new[] { "openid", "api1" },
+                CreationTime = new DateTime(2018, 10, 19, 16, 14, 29),
+                Lifetime = 300,
+                IsOpenId = true,
+                Subject = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>
+                    { new Claim(JwtClaimTypes.Subject, $"sub_{Guid.NewGuid().ToString()}") }
+                )),
+            };
+
+            await InitializeServices(options => { options.SetRavenDbDocumentExpiresMetadata = true; }).DeviceFlowStore
+                .StoreDeviceAuthorizationAsync(
+                    testDeviceCode,
+                    testUserCode,
+                    deviceCode
+                );
+
+            {
+                ServiceScope scope = InitializeServices();
+                IAsyncDocumentSession session = scope.DocumentSession;
+                WaitForIndexing(scope.DocumentStore);
+                DeviceFlowCode foundCode = await session
+                    .Query<DeviceFlowCode>()
+                    .SingleOrDefaultAsync(x => x.UserCode == testUserCode);
+                foundCode.Should().NotBeNull();
+
+                IMetadataDictionary metadata = scope.DocumentSession.Advanced.GetMetadataFor(foundCode);
+                metadata.Should().ContainKey(Constants.Documents.Metadata.Expires);
+                metadata[Constants.Documents.Metadata.Expires]
+                    .Should()
+                    .Be(deviceCode.CreationTime.AddSeconds(deviceCode.Lifetime).ToUniversalTime().ToString("O"));
+            }
+
+            deviceCode.Description = "Updated description";
+            await InitializeServices(
+                options => { options.SetRavenDbDocumentExpiresMetadata = false; }
+            ).DeviceFlowStore.UpdateByUserCodeAsync(testUserCode, deviceCode);
+
+            {
+                ServiceScope scope = InitializeServices();
+                IAsyncDocumentSession session = scope.DocumentSession;
+                WaitForIndexing(scope.DocumentStore);
+                DeviceFlowCode foundCode = await session
+                    .Query<DeviceFlowCode>()
+                    .SingleOrDefaultAsync(x => x.UserCode == testUserCode);
+                foundCode.Should().NotBeNull();
+
+                IMetadataDictionary metadata = scope.DocumentSession.Advanced.GetMetadataFor(foundCode);
+                metadata.Should().ContainKey(Constants.Documents.Metadata.Expires);
+                metadata[Constants.Documents.Metadata.Expires]
+                    .Should()
+                    .Be(deviceCode.CreationTime.AddSeconds(deviceCode.Lifetime).ToUniversalTime().ToString("O"));
+            }
+        }
+
+        [Fact]
+        public async Task ShouldNotAddDocumentExpiresMetadataOnCreateAndUpdateIfOptionDisabled()
+        {
+            var testDeviceCode = $"device_{Guid.NewGuid().ToString()}";
+            var testUserCode = $"user_{Guid.NewGuid().ToString()}";
+
+            var deviceCode = new DeviceCode
+            {
+                ClientId = "device_flow",
+                RequestedScopes = new[] { "openid", "api1" },
+                CreationTime = new DateTime(2018, 10, 19, 16, 14, 29),
+                Lifetime = 300,
+                IsOpenId = true,
+                Subject = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>
+                    { new Claim(JwtClaimTypes.Subject, $"sub_{Guid.NewGuid().ToString()}") }
+                )),
+            };
+
+            await InitializeServices(
+                    options => { options.SetRavenDbDocumentExpiresMetadata = false; }
+                )
+                .DeviceFlowStore
+                .StoreDeviceAuthorizationAsync(
+                    testDeviceCode,
+                    testUserCode,
+                    deviceCode
+                );
+
+            {
+                ServiceScope scope = InitializeServices();
+                IAsyncDocumentSession session = scope.DocumentSession;
+                WaitForIndexing(scope.DocumentStore);
+                DeviceFlowCode foundCode = await session
+                    .Query<DeviceFlowCode>()
+                    .SingleOrDefaultAsync(x => x.UserCode == testUserCode);
+                foundCode.Should().NotBeNull();
+
+                IMetadataDictionary metadata = scope.DocumentSession.Advanced.GetMetadataFor(foundCode);
+                metadata.Should().NotContainKey(Constants.Documents.Metadata.Expires, "feature is disabled");
+            }
+
+            deviceCode.Description = "Updated description";
+            await InitializeServices(
+                options => { options.SetRavenDbDocumentExpiresMetadata = false; }
+            ).DeviceFlowStore.UpdateByUserCodeAsync(testUserCode, deviceCode);
+
+            {
+                ServiceScope scope = InitializeServices();
+                IAsyncDocumentSession session = scope.DocumentSession;
+                WaitForIndexing(scope.DocumentStore);
+                DeviceFlowCode foundCode = await session
+                    .Query<DeviceFlowCode>()
+                    .SingleOrDefaultAsync(x => x.UserCode == testUserCode);
+                foundCode.Should().NotBeNull();
+
+                IMetadataDictionary metadata = scope.DocumentSession.Advanced.GetMetadataFor(foundCode);
+                metadata.Should().NotContainKey(Constants.Documents.Metadata.Expires, "feature is disabled");
+            }
         }
     }
 }

@@ -13,28 +13,27 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.TokenCleanup
 {
     /// <summary>
     /// Helper to periodically cleanup expired persisted grants.
-    /// todo: Replace this with RavenDB document expiration feature https://ravendb.net/docs/article-page/5.0/csharp/server/extensions/expiration
     /// </summary>
     public class TokenCleanupService : ITokenCleanupService
     {
         private readonly IAsyncDocumentSession _documentSession;
         private readonly ILogger<TokenCleanupService> _logger;
-        private readonly IOptionsSnapshot<TokenCleanupOptions> _tokenCleanupOptions;
+        private readonly IOptionsSnapshot<OperationalStoreOptions> _operationalStoreOptions;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TokenCleanupService"/> class.
         /// </summary>
         /// <param name="identityServerDocumentSessionProvider">Provider the document session.</param>
-        /// <param name="tokenCleanupOptions">Options.</param>
+        /// <param name="operationalStoreOptions">Options.</param>
         /// <param name="logger">Logger.</param>
         public TokenCleanupService(
             IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
-            IOptionsSnapshot<TokenCleanupOptions> tokenCleanupOptions,
+            IOptionsSnapshot<OperationalStoreOptions> operationalStoreOptions,
             ILogger<TokenCleanupService> logger)
         {
             _documentSession = identityServerDocumentSessionProvider();
             _logger = logger;
-            _tokenCleanupOptions = tokenCleanupOptions;
+            _operationalStoreOptions = operationalStoreOptions;
         }
 
         /// <inheritdoc/>
@@ -96,7 +95,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.TokenCleanup
             const int deleteOperationTimeoutSec = 30;
             try
             {
-                int? deleteByQueryMaxOperations = _tokenCleanupOptions.Value.DeleteByQueryMaxOperationsPerSecond;
+                int? deleteByQueryMaxOperations = _operationalStoreOptions.Value.TokenCleanup.DeleteByQueryMaxOperationsPerSecond;
                 Operation operation = await _documentSession.Advanced.DocumentStore.Operations.SendAsync(
                     new DeleteByQueryOperation(
                         query.ToAsyncDocumentQuery().GetIndexQuery(),

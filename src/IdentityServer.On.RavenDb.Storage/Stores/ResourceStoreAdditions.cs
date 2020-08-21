@@ -241,6 +241,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
         }
 
+        /// <inheritdoc/>
         public async Task<StoreResult> UpdateApiResourceAsync(
             ApiResource apiResource,
             CancellationToken cancellationToken = default)
