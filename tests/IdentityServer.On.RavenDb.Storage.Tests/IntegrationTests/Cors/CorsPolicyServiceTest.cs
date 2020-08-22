@@ -13,14 +13,14 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Cors
         {
             const string testCorsOrigin = "https://identityserver.io/";
 
-            await InitializeServices().ClientStoreAdditions.CreateAsync(new Client
+            await InitializeServices().ClientStoreExtension.CreateAsync(new Client
             {
                 ClientId = Guid.NewGuid().ToString(),
                 ClientName = Guid.NewGuid().ToString(),
                 AllowedCorsOrigins = new List<string> { "https://www.identityserver.com" },
             });
 
-            await InitializeServices().ClientStoreAdditions.CreateAsync(new Client
+            await InitializeServices().ClientStoreExtension.CreateAsync(new Client
             {
                 ClientId = "2",
                 ClientName = "2",
@@ -36,7 +36,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Cors
         [Fact]
         public async Task IsOriginAllowedAsync_WhenOriginIsNotAllowed_ExpectFalse()
         {
-            await InitializeServices().ClientStoreAdditions.CreateAsync(new Client
+            await InitializeServices().ClientStoreExtension.CreateAsync(new Client
             {
                 ClientId = Guid.NewGuid().ToString(),
                 ClientName = Guid.NewGuid().ToString(),

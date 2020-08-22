@@ -5,7 +5,7 @@ using FluentAssertions;
 using IdentityModel;
 using IdentityServer4.Models;
 using IdentityServer4.Stores;
-using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Additions;
+using Mcrio.IdentityServer.On.RavenDb.Storage.Stores;
 using Xunit;
 using Xunit.Sdk;
 using ApiScope = Mcrio.IdentityServer.On.RavenDb.Storage.Entities.ApiScope;
@@ -25,8 +25,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             };
 
             ServiceScope scope = InitializeServices();
-            IClientStoreAdditions<Client> clientStoreAdditions = scope.ClientStoreAdditions;
-            (await clientStoreAdditions.CreateAsync(testClient)).IsSuccess.Should().BeTrue();
+            IClientStoreExtension<Client> clientStoreExtension = scope.ClientStoreExtension;
+            (await clientStoreExtension.CreateAsync(testClient)).IsSuccess.Should().BeTrue();
 
             WaitForUserToContinueTheTest(scope.DocumentStore);
 
@@ -63,7 +63,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             };
 
             ServiceScope scope1 = InitializeServices();
-            (await scope1.ClientStoreAdditions.CreateAsync(testClient)).IsSuccess.Should().BeTrue();
+            (await scope1.ClientStoreExtension.CreateAsync(testClient)).IsSuccess.Should().BeTrue();
 
             Client? client = await InitializeServices().ClientStore.FindClientByIdAsync(testClient.ClientId);
 
@@ -89,7 +89,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 testClient.AllowedCorsOrigins.Add($"https://localhost:{i}");
             }
 
-            (await InitializeServices().ClientStoreAdditions.CreateAsync(testClient)).IsSuccess.Should().BeTrue();
+            (await InitializeServices().ClientStoreExtension.CreateAsync(testClient)).IsSuccess.Should().BeTrue();
 
             for (var i = 0; i < 200; i++)
             {
@@ -105,7 +105,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                     Name = "fdss",
                 });
                 await scope34.DocumentSession.SaveChangesAsync();
-                (await InitializeServices().ClientStoreAdditions.CreateAsync(
+                (await InitializeServices().ClientStoreExtension.CreateAsync(
                     new Client
                     {
                         ClientId = testClient.ClientId + i,
@@ -147,7 +147,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 AllowedGrantTypes = new List<string>() { OidcConstants.GrantTypes.AuthorizationCode },
             };
 
-            (await InitializeServices().ClientStoreAdditions.CreateAsync(testClient)).IsSuccess.Should().BeTrue();
+            (await InitializeServices().ClientStoreExtension.CreateAsync(testClient)).IsSuccess.Should().BeTrue();
             Client? fromDb = await InitializeServices().ClientStore.FindClientByIdAsync(testClient.ClientId);
             fromDb.Should().NotBeNull();
             fromDb.Should().BeEquivalentTo(testClient);
@@ -165,9 +165,9 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             };
 
             ServiceScope scope = InitializeServices();
-            (await scope.ClientStoreAdditions.CreateAsync(testClient)).IsSuccess.Should().BeTrue();
+            (await scope.ClientStoreExtension.CreateAsync(testClient)).IsSuccess.Should().BeTrue();
 
-            (await scope.ClientStoreAdditions.CreateAsync(testClient)).IsSuccess.Should().BeFalse("client already created.");
+            (await scope.ClientStoreExtension.CreateAsync(testClient)).IsSuccess.Should().BeFalse("client already created.");
 
             var testClient2 = new Client
             {
@@ -176,7 +176,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 AllowedScopes = { "openid", "profile", "api1" },
                 AllowedGrantTypes = new List<string>() { OidcConstants.GrantTypes.AuthorizationCode },
             };
-            (await scope.ClientStoreAdditions.CreateAsync(testClient2)).IsSuccess.Should()
+            (await scope.ClientStoreExtension.CreateAsync(testClient2)).IsSuccess.Should()
                 .BeFalse("client with same name already exists.");
         }
 
@@ -184,7 +184,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
         public async Task ShouldNotAddClientIfMissingClientId()
         {
             {
-                StoreResult result = await InitializeServices().ClientStoreAdditions.CreateAsync(
+                StoreResult result = await InitializeServices().ClientStoreExtension.CreateAsync(
                     new Client
                     {
                         ClientId = string.Empty,
@@ -196,7 +196,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             }
 
             {
-                StoreResult result = await InitializeServices().ClientStoreAdditions.CreateAsync(
+                StoreResult result = await InitializeServices().ClientStoreExtension.CreateAsync(
                     new Client
                     {
                         ClientId = null,
@@ -212,7 +212,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
         public async Task ShouldNotAddClientIfMissingProtocolType()
         {
             {
-                StoreResult result = await InitializeServices().ClientStoreAdditions.CreateAsync(
+                StoreResult result = await InitializeServices().ClientStoreExtension.CreateAsync(
                     new Client
                     {
                         ClientId = Guid.NewGuid().ToString(),
@@ -225,7 +225,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             }
 
             {
-                StoreResult result = await InitializeServices().ClientStoreAdditions.CreateAsync(
+                StoreResult result = await InitializeServices().ClientStoreExtension.CreateAsync(
                     new Client
                     {
                         ClientId = Guid.NewGuid().ToString(),
@@ -248,7 +248,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 AllowedScopes = { "openid", "profile", "api1" },
                 AllowedGrantTypes = new List<string>() { OidcConstants.GrantTypes.AuthorizationCode },
             };
-            (await InitializeServices().ClientStoreAdditions.CreateAsync(testClient)).IsSuccess.Should().BeTrue();
+            (await InitializeServices().ClientStoreExtension.CreateAsync(testClient)).IsSuccess.Should().BeTrue();
 
             ServiceScope scope = InitializeServices();
             IClientStore clientStore = scope.ClientStore;
@@ -258,7 +258,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
 
             retrievedClient.ClientId = Guid.NewGuid().ToString();
 
-            StoreResult updateResult = await scope.ClientStoreAdditions.UpdateAsync(retrievedClient);
+            StoreResult updateResult = await scope.ClientStoreExtension.UpdateAsync(retrievedClient);
             updateResult.IsSuccess.Should().BeFalse();
             updateResult.Error.Should().StartWith("Entity not found.");
         }
@@ -273,7 +273,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 AllowedScopes = { "openid", "profile", "api1" },
                 AllowedGrantTypes = new List<string>() { OidcConstants.GrantTypes.AuthorizationCode },
             };
-            (await InitializeServices().ClientStoreAdditions.CreateAsync(testClient)).IsSuccess.Should().BeTrue();
+            (await InitializeServices().ClientStoreExtension.CreateAsync(testClient)).IsSuccess.Should().BeTrue();
 
             var newName = Guid.NewGuid().ToString();
             var newScopes = new List<string> { "openid", "api1" };
@@ -288,7 +288,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 retrievedClient.ClientName = newName;
                 retrievedClient.AllowedScopes = newScopes;
 
-                StoreResult updateResult = await scope.ClientStoreAdditions.UpdateAsync(retrievedClient);
+                StoreResult updateResult = await scope.ClientStoreExtension.UpdateAsync(retrievedClient);
                 updateResult.IsSuccess.Should().BeTrue();
             }
 
@@ -317,7 +317,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 AllowedScopes = { "openid", "profile", "api1" },
                 AllowedGrantTypes = new List<string>() { OidcConstants.GrantTypes.AuthorizationCode },
             };
-            (await scope0.ClientStoreAdditions.CreateAsync(testClient)).IsSuccess.Should().BeTrue();
+            (await scope0.ClientStoreExtension.CreateAsync(testClient)).IsSuccess.Should().BeTrue();
 
             ServiceScope scope1 = InitializeServices();
             ServiceScope scope2 = InitializeServices();
@@ -335,14 +335,14 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 retrievedClient2.ClientName = newName;
                 retrievedClient2.AllowedScopes = newApiScopes;
 
-                StoreResult updateResult2 = await scope2.ClientStoreAdditions.UpdateAsync(retrievedClient2);
+                StoreResult updateResult2 = await scope2.ClientStoreExtension.UpdateAsync(retrievedClient2);
                 updateResult2.IsSuccess.Should().BeTrue();
             }
 
             retrievedClient1.ClientName = newName;
             retrievedClient1.AllowedScopes = newApiScopes;
 
-            StoreResult updateResult = await scope1.ClientStoreAdditions.UpdateAsync(retrievedClient1);
+            StoreResult updateResult = await scope1.ClientStoreExtension.UpdateAsync(retrievedClient1);
 
             scope0.DocumentSession.Advanced.NumberOfRequests.Should().Be(1, "used to just insert test user");
             scope2.DocumentSession.Advanced.NumberOfRequests.Should().Be(2, "used to get user and update");
@@ -356,7 +356,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
         public async Task ShouldDeleteExistingClient()
         {
             ServiceScope scope0 = InitializeServices();
-            (await scope0.ClientStoreAdditions.CreateAsync(
+            (await scope0.ClientStoreExtension.CreateAsync(
                 new Client
                 {
                     ClientId = "test_client_with_uris",
@@ -365,7 +365,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                     AllowedGrantTypes = new List<string>() { OidcConstants.GrantTypes.AuthorizationCode },
                 }
             )).IsSuccess.Should().BeTrue();
-            (await scope0.ClientStoreAdditions.CreateAsync(
+            (await scope0.ClientStoreExtension.CreateAsync(
                 new Client
                 {
                     ClientId = "test_client_with_uris_2",
@@ -383,7 +383,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 Client? retrievedClient2 = await scope2.ClientStore.FindClientByIdAsync("test_client_with_uris_2");
                 retrievedClient2.Should().NotBeNull();
 
-                (await scope2.ClientStoreAdditions.DeleteAsync("test_client_with_uris")).IsSuccess.Should().BeTrue();
+                (await scope2.ClientStoreExtension.DeleteAsync("test_client_with_uris")).IsSuccess.Should().BeTrue();
             }
 
             {
@@ -396,7 +396,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             }
 
             StoreResult removeNonExistingResult = await InitializeServices()
-                .ClientStoreAdditions
+                .ClientStoreExtension
                 .DeleteAsync("test_client_with_uris");
             removeNonExistingResult.IsSuccess.Should().BeFalse();
             removeNonExistingResult.Error.Should().StartWith("Entity not found");

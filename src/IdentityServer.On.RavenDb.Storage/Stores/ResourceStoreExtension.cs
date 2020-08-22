@@ -3,29 +3,28 @@ using System.Threading;
 using System.Threading.Tasks;
 using IdentityServer4.Models;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Mappers;
-using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Additions;
 using Microsoft.Extensions.Logging;
 using Raven.Client.Documents.Session;
 using Raven.Client.Exceptions;
 
 namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
 {
-    public class ResourceStoreAdditions : ResourceStoreAdditions<IdentityResource, Entities.IdentityResource,
+    public class ResourceStoreExtension : ResourceStoreExtension<IdentityResource, Entities.IdentityResource,
         ApiResource, Entities.ApiResource, ApiScope, Entities.ApiScope>
     {
-        public ResourceStoreAdditions(
+        public ResourceStoreExtension(
             IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             IIdentityServerStoreMapper mapper,
-            ILogger<ResourceStoreAdditions<IdentityResource, Entities.IdentityResource, ApiResource,
+            ILogger<ResourceStoreExtension<IdentityResource, Entities.IdentityResource, ApiResource,
                 Entities.ApiResource, ApiScope, Entities.ApiScope>> logger)
             : base(identityServerDocumentSessionProvider, mapper, logger)
         {
         }
     }
 
-    public abstract class ResourceStoreAdditions<TIdentityResourceModel, TIdentityResourceEntity,
+    public abstract class ResourceStoreExtension<TIdentityResourceModel, TIdentityResourceEntity,
             TApiResourceModel, TApiResourceEntity, TApiScopeModel, TApiScopeEntity>
-        : IResourceStoreAdditions<TIdentityResourceModel, TApiResourceModel, TApiScopeModel>
+        : IResourceStoreExtension<TIdentityResourceModel, TApiResourceModel, TApiScopeModel>
         where TIdentityResourceModel : IdentityResource
         where TIdentityResourceEntity : Entities.IdentityResource
         where TApiResourceModel : ApiResource
@@ -33,10 +32,10 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
         where TApiScopeModel : ApiScope
         where TApiScopeEntity : Entities.ApiScope
     {
-        protected ResourceStoreAdditions(
+        protected ResourceStoreExtension(
             IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             IIdentityServerStoreMapper mapper,
-            ILogger<ResourceStoreAdditions<TIdentityResourceModel, TIdentityResourceEntity,
+            ILogger<ResourceStoreExtension<TIdentityResourceModel, TIdentityResourceEntity,
                 TApiResourceModel, TApiResourceEntity, TApiScopeModel, TApiScopeEntity>> logger)
         {
             DocumentSession = identityServerDocumentSessionProvider();
@@ -48,7 +47,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
 
         protected IIdentityServerStoreMapper Mapper { get; }
 
-        protected ILogger<ResourceStoreAdditions<TIdentityResourceModel, TIdentityResourceEntity,
+        protected ILogger<ResourceStoreExtension<TIdentityResourceModel, TIdentityResourceEntity,
             TApiResourceModel, TApiResourceEntity, TApiScopeModel, TApiScopeEntity>> Logger { get; }
 
         public virtual async Task<StoreResult> CreateIdentityResourceAsync(

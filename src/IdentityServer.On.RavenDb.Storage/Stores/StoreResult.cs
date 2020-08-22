@@ -1,6 +1,6 @@
 using System;
 
-namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Additions
+namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
 {
     public class StoreResult
     {

@@ -6,7 +6,7 @@ using FluentAssertions;
 using IdentityModel;
 using IdentityServer4.Models;
 using IdentityServer4.Stores;
-using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Additions;
+using Mcrio.IdentityServer.On.RavenDb.Storage.Stores;
 using Xunit;
 
 namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
@@ -19,7 +19,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             ApiResource resource = CreateApiResourceTestResource();
 
             ServiceScope scope = InitializeServices();
-            (await scope.ResourceStoreAdditions.CreateApiResourceAsync(resource)).IsSuccess.Should().BeTrue();
+            (await scope.ResourceStoreExtension.CreateApiResourceAsync(resource)).IsSuccess.Should().BeTrue();
 
             ApiResource? foundResource = (
                 await InitializeServices().ResourceStore.FindApiResourcesByNameAsync(new[] { resource.Name })
@@ -44,8 +44,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             ApiResource resource = CreateApiResourceTestResource();
 
             ServiceScope scope = InitializeServices();
-            (await scope.ResourceStoreAdditions.CreateApiResourceAsync(resource)).IsSuccess.Should().BeTrue();
-            (await scope.ResourceStoreAdditions.CreateApiResourceAsync(CreateApiResourceTestResource()))
+            (await scope.ResourceStoreExtension.CreateApiResourceAsync(resource)).IsSuccess.Should().BeTrue();
+            (await scope.ResourceStoreExtension.CreateApiResourceAsync(CreateApiResourceTestResource()))
                 .IsSuccess
                 .Should()
                 .BeTrue();
@@ -73,8 +73,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             testApiResource.Scopes.Add(testApiScope.Name);
 
             ServiceScope scope = InitializeServices();
-            (await scope.ResourceStoreAdditions.CreateApiResourceAsync(testApiResource)).IsSuccess.Should().BeTrue();
-            (await scope.ResourceStoreAdditions.CreateApiScopeAsync(testApiScope)).IsSuccess.Should().BeTrue();
+            (await scope.ResourceStoreExtension.CreateApiResourceAsync(testApiResource)).IsSuccess.Should().BeTrue();
+            (await scope.ResourceStoreExtension.CreateApiScopeAsync(testApiScope)).IsSuccess.Should().BeTrue();
 
             List<ApiResource> resources = (
                 await InitializeServices()
@@ -99,17 +99,17 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             testApiResource.Scopes.Add(testApiScope.Name);
 
             ServiceScope scope = InitializeServices();
-            (await scope.ResourceStoreAdditions.CreateIdentityResourceAsync(testIdentityResource)).IsSuccess.Should()
+            (await scope.ResourceStoreExtension.CreateIdentityResourceAsync(testIdentityResource)).IsSuccess.Should()
                 .BeTrue();
-            (await scope.ResourceStoreAdditions.CreateApiResourceAsync(testApiResource)).IsSuccess.Should().BeTrue();
-            (await scope.ResourceStoreAdditions.CreateApiScopeAsync(testApiScope)).IsSuccess.Should().BeTrue();
-            (await scope.ResourceStoreAdditions.CreateIdentityResourceAsync(CreateIdentityTestResource())).IsSuccess
+            (await scope.ResourceStoreExtension.CreateApiResourceAsync(testApiResource)).IsSuccess.Should().BeTrue();
+            (await scope.ResourceStoreExtension.CreateApiScopeAsync(testApiScope)).IsSuccess.Should().BeTrue();
+            (await scope.ResourceStoreExtension.CreateIdentityResourceAsync(CreateIdentityTestResource())).IsSuccess
                 .Should()
                 .BeTrue();
-            (await scope.ResourceStoreAdditions.CreateApiResourceAsync(CreateApiResourceTestResource())).IsSuccess
+            (await scope.ResourceStoreExtension.CreateApiResourceAsync(CreateApiResourceTestResource())).IsSuccess
                 .Should()
                 .BeTrue();
-            (await scope.ResourceStoreAdditions.CreateApiScopeAsync(CreateApiScopeTestResource())).IsSuccess.Should()
+            (await scope.ResourceStoreExtension.CreateApiScopeAsync(CreateApiScopeTestResource())).IsSuccess.Should()
                 .BeTrue();
 
             WaitForIndexing(scope.DocumentStore);
@@ -132,7 +132,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             IdentityResource resource = CreateIdentityTestResource();
 
             ServiceScope scope = InitializeServices();
-            (await scope.ResourceStoreAdditions.CreateIdentityResourceAsync(resource)).IsSuccess.Should().BeTrue();
+            (await scope.ResourceStoreExtension.CreateIdentityResourceAsync(resource)).IsSuccess.Should().BeTrue();
 
             WaitForIndexing(scope.DocumentStore);
 
@@ -162,8 +162,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             IdentityResource resource = CreateIdentityTestResource();
 
             ServiceScope scope = InitializeServices();
-            (await scope.ResourceStoreAdditions.CreateIdentityResourceAsync(resource)).IsSuccess.Should().BeTrue();
-            (await scope.ResourceStoreAdditions.CreateIdentityResourceAsync(CreateIdentityTestResource()))
+            (await scope.ResourceStoreExtension.CreateIdentityResourceAsync(resource)).IsSuccess.Should().BeTrue();
+            (await scope.ResourceStoreExtension.CreateIdentityResourceAsync(CreateIdentityTestResource()))
                 .IsSuccess
                 .Should()
                 .BeTrue();
@@ -188,7 +188,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             ApiScope resource = CreateApiScopeTestResource();
 
             ServiceScope scope = InitializeServices();
-            (await scope.ResourceStoreAdditions.CreateApiScopeAsync(resource)).IsSuccess.Should().BeTrue();
+            (await scope.ResourceStoreExtension.CreateApiScopeAsync(resource)).IsSuccess.Should().BeTrue();
 
             IList<ApiScope> resources = (
                 await InitializeServices()
@@ -214,8 +214,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             ApiScope resource = CreateApiScopeTestResource();
 
             ServiceScope scope = InitializeServices();
-            (await scope.ResourceStoreAdditions.CreateApiScopeAsync(resource)).IsSuccess.Should().BeTrue();
-            (await scope.ResourceStoreAdditions.CreateApiScopeAsync(CreateApiScopeTestResource())).IsSuccess.Should()
+            (await scope.ResourceStoreExtension.CreateApiScopeAsync(resource)).IsSuccess.Should().BeTrue();
+            (await scope.ResourceStoreExtension.CreateApiScopeAsync(CreateApiScopeTestResource())).IsSuccess.Should()
                 .BeTrue();
 
             IList<ApiScope> resources = (
@@ -257,17 +257,17 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
 
             ServiceScope scope = InitializeServices();
 
-            (await scope.ResourceStoreAdditions.CreateIdentityResourceAsync(visibleIdentityResource))
+            (await scope.ResourceStoreExtension.CreateIdentityResourceAsync(visibleIdentityResource))
                 .IsSuccess
                 .Should()
                 .BeTrue();
-            (await scope.ResourceStoreAdditions.CreateApiResourceAsync(visibleApiResource)).IsSuccess.Should().BeTrue();
-            (await scope.ResourceStoreAdditions.CreateApiScopeAsync(visibleApiScope)).IsSuccess.Should().BeTrue();
+            (await scope.ResourceStoreExtension.CreateApiResourceAsync(visibleApiResource)).IsSuccess.Should().BeTrue();
+            (await scope.ResourceStoreExtension.CreateApiScopeAsync(visibleApiScope)).IsSuccess.Should().BeTrue();
 
-            (await scope.ResourceStoreAdditions.CreateIdentityResourceAsync(hiddenIdentityResource)).IsSuccess.Should()
+            (await scope.ResourceStoreExtension.CreateIdentityResourceAsync(hiddenIdentityResource)).IsSuccess.Should()
                 .BeTrue();
-            (await scope.ResourceStoreAdditions.CreateApiResourceAsync(hiddenApiResource)).IsSuccess.Should().BeTrue();
-            (await scope.ResourceStoreAdditions.CreateApiScopeAsync(hiddenApiScope)).IsSuccess.Should().BeTrue();
+            (await scope.ResourceStoreExtension.CreateApiResourceAsync(hiddenApiResource)).IsSuccess.Should().BeTrue();
+            (await scope.ResourceStoreExtension.CreateApiScopeAsync(hiddenApiScope)).IsSuccess.Should().BeTrue();
 
             Resources resources = await InitializeServices().ResourceStore.GetAllResourcesAsync();
 
@@ -296,7 +296,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 Name = "test-name",
             };
 
-            (await InitializeServices().ResourceStoreAdditions.CreateIdentityResourceAsync(testIdentityResource))
+            (await InitializeServices().ResourceStoreExtension.CreateIdentityResourceAsync(testIdentityResource))
                 .IsSuccess
                 .Should().BeTrue();
             var fromDb = (await InitializeServices()
@@ -315,11 +315,11 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 Name = "test-name",
             };
 
-            (await InitializeServices().ResourceStoreAdditions.CreateIdentityResourceAsync(testIdentityResource))
+            (await InitializeServices().ResourceStoreExtension.CreateIdentityResourceAsync(testIdentityResource))
                 .IsSuccess
                 .Should()
                 .BeTrue();
-            (await InitializeServices().ResourceStoreAdditions.CreateIdentityResourceAsync(testIdentityResource))
+            (await InitializeServices().ResourceStoreExtension.CreateIdentityResourceAsync(testIdentityResource))
                 .IsSuccess
                 .Should()
                 .BeFalse("client already created.");
@@ -328,7 +328,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             {
                 Name = "test-name",
             };
-            (await InitializeServices().ResourceStoreAdditions.CreateIdentityResourceAsync(testIdentityResource2))
+            (await InitializeServices().ResourceStoreExtension.CreateIdentityResourceAsync(testIdentityResource2))
                 .IsSuccess
                 .Should()
                 .BeFalse("client with same name already exists.");
@@ -338,7 +338,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
         public async Task ShouldNotAddIdentityResourceIfMissingName()
         {
             {
-                StoreResult result = await InitializeServices().ResourceStoreAdditions.CreateIdentityResourceAsync(
+                StoreResult result = await InitializeServices().ResourceStoreExtension.CreateIdentityResourceAsync(
                     new IdentityResource
                     {
                         Name = string.Empty,
@@ -349,7 +349,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             }
 
             {
-                StoreResult result = await InitializeServices().ResourceStoreAdditions.CreateIdentityResourceAsync(
+                StoreResult result = await InitializeServices().ResourceStoreExtension.CreateIdentityResourceAsync(
                     new IdentityResource
                     {
                         Name = null,
@@ -368,7 +368,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 Name = "test-name",
             };
 
-            (await InitializeServices().ResourceStoreAdditions.CreateIdentityResourceAsync(testIdentityResource))
+            (await InitializeServices().ResourceStoreExtension.CreateIdentityResourceAsync(testIdentityResource))
                 .IsSuccess
                 .Should()
                 .BeTrue();
@@ -385,7 +385,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             retrievedResource.Name = Guid.NewGuid().ToString();
 
             StoreResult updateResult =
-                await scope.ResourceStoreAdditions.UpdateIdentityResourceAsync(retrievedResource);
+                await scope.ResourceStoreExtension.UpdateIdentityResourceAsync(retrievedResource);
             updateResult.IsSuccess.Should().BeFalse();
             updateResult.Error.Should().StartWith("Entity not found.");
         }
@@ -400,7 +400,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 UserClaims = new List<string> { "claim1", "claim2" },
             };
 
-            (await InitializeServices().ResourceStoreAdditions.CreateIdentityResourceAsync(testIdentityResource))
+            (await InitializeServices().ResourceStoreExtension.CreateIdentityResourceAsync(testIdentityResource))
                 .IsSuccess
                 .Should()
                 .BeTrue();
@@ -424,7 +424,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 retrievedResource.UserClaims = newClaims;
 
                 StoreResult updateResult =
-                    await scope.ResourceStoreAdditions.UpdateIdentityResourceAsync(retrievedResource);
+                    await scope.ResourceStoreExtension.UpdateIdentityResourceAsync(retrievedResource);
                 updateResult.IsSuccess.Should().BeTrue();
             }
 
@@ -455,7 +455,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             };
 
             ServiceScope scope0 = InitializeServices();
-            (await scope0.ResourceStoreAdditions.CreateIdentityResourceAsync(testIdentityResource))
+            (await scope0.ResourceStoreExtension.CreateIdentityResourceAsync(testIdentityResource))
                 .IsSuccess
                 .Should()
                 .BeTrue();
@@ -489,7 +489,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 retrievedResource2.UserClaims = newClaims;
 
                 StoreResult updateResult2 =
-                    await scope2.ResourceStoreAdditions.UpdateIdentityResourceAsync(retrievedResource2);
+                    await scope2.ResourceStoreExtension.UpdateIdentityResourceAsync(retrievedResource2);
                 updateResult2.IsSuccess.Should().BeTrue();
             }
 
@@ -497,7 +497,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             retrievedResource.UserClaims = newClaims;
 
             StoreResult updateResult =
-                await scope1.ResourceStoreAdditions.UpdateIdentityResourceAsync(retrievedResource);
+                await scope1.ResourceStoreExtension.UpdateIdentityResourceAsync(retrievedResource);
 
             scope0.DocumentSession.Advanced.NumberOfRequests.Should().Be(1, "used to just insert");
             scope2.DocumentSession.Advanced.NumberOfRequests.Should().Be(2, "used to get and update");
@@ -511,14 +511,14 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
         public async Task ShouldDeleteExistingIdentityResource()
         {
             ServiceScope scope0 = InitializeServices();
-            (await scope0.ResourceStoreAdditions.CreateIdentityResourceAsync(
+            (await scope0.ResourceStoreExtension.CreateIdentityResourceAsync(
                 new IdentityResource
                 {
                     Name = "test-name",
                     UserClaims = new List<string> { "claim1", "claim2" },
                 }
             )).IsSuccess.Should().BeTrue();
-            (await scope0.ResourceStoreAdditions.CreateIdentityResourceAsync(
+            (await scope0.ResourceStoreExtension.CreateIdentityResourceAsync(
                 new IdentityResource
                 {
                     Name = "test-name-2",
@@ -540,7 +540,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 IdentityResource retrievedResource2 = dbResults.Last();
                 retrievedResource2.Should().NotBeNull();
 
-                (await scope2.ResourceStoreAdditions.DeleteIdentityResourceAsync("test-name-2")).IsSuccess.Should().BeTrue();
+                (await scope2.ResourceStoreExtension.DeleteIdentityResourceAsync("test-name-2")).IsSuccess.Should().BeTrue();
             }
 
             {
@@ -556,7 +556,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             }
 
             StoreResult removeNonExistingResult = await InitializeServices()
-                .ResourceStoreAdditions
+                .ResourceStoreExtension
                 .DeleteIdentityResourceAsync("non-existing-name");
             removeNonExistingResult.IsSuccess.Should().BeFalse();
             removeNonExistingResult.Error.Should().StartWith("Entity not found");
@@ -574,7 +574,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 Name = "test-name",
             };
 
-            (await InitializeServices().ResourceStoreAdditions.CreateApiResourceAsync(testResource)).IsSuccess
+            (await InitializeServices().ResourceStoreExtension.CreateApiResourceAsync(testResource)).IsSuccess
                 .Should().BeTrue();
             var fromDb = (await InitializeServices()
                 .ResourceStore
@@ -592,11 +592,11 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 Name = "test-name",
             };
 
-            (await InitializeServices().ResourceStoreAdditions.CreateApiResourceAsync(testResource))
+            (await InitializeServices().ResourceStoreExtension.CreateApiResourceAsync(testResource))
                 .IsSuccess
                 .Should()
                 .BeTrue();
-            (await InitializeServices().ResourceStoreAdditions.CreateApiResourceAsync(testResource))
+            (await InitializeServices().ResourceStoreExtension.CreateApiResourceAsync(testResource))
                 .IsSuccess
                 .Should()
                 .BeFalse("resource already created.");
@@ -605,7 +605,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             {
                 Name = "test-name",
             };
-            (await InitializeServices().ResourceStoreAdditions.CreateApiResourceAsync(restResource2))
+            (await InitializeServices().ResourceStoreExtension.CreateApiResourceAsync(restResource2))
                 .IsSuccess
                 .Should()
                 .BeFalse("resource with same name already exists.");
@@ -615,7 +615,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
         public async Task ShouldNotAddApiResourceIfMissingName()
         {
             {
-                var result = await InitializeServices().ResourceStoreAdditions.CreateApiResourceAsync(
+                var result = await InitializeServices().ResourceStoreExtension.CreateApiResourceAsync(
                     new ApiResource
                     {
                         Name = string.Empty,
@@ -626,7 +626,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             }
 
             {
-                var result = await InitializeServices().ResourceStoreAdditions.CreateApiResourceAsync(
+                var result = await InitializeServices().ResourceStoreExtension.CreateApiResourceAsync(
                     new ApiResource
                     {
                         Name = null,
@@ -645,7 +645,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 Name = "test-name",
             };
 
-            (await InitializeServices().ResourceStoreAdditions.CreateApiResourceAsync(testResource))
+            (await InitializeServices().ResourceStoreExtension.CreateApiResourceAsync(testResource))
                 .IsSuccess
                 .Should()
                 .BeTrue();
@@ -661,7 +661,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             var retrievedResource = dbResults.First();
             retrievedResource.Name = Guid.NewGuid().ToString();
 
-            var updateResult = await scope.ResourceStoreAdditions.UpdateApiResourceAsync(retrievedResource);
+            var updateResult = await scope.ResourceStoreExtension.UpdateApiResourceAsync(retrievedResource);
             updateResult.IsSuccess.Should().BeFalse();
             updateResult.Error.Should().StartWith("Entity not found.");
         }
@@ -676,7 +676,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 UserClaims = new List<string> { "claim1", "claim2" },
             };
 
-            (await InitializeServices().ResourceStoreAdditions.CreateApiResourceAsync(testResource))
+            (await InitializeServices().ResourceStoreExtension.CreateApiResourceAsync(testResource))
                 .IsSuccess
                 .Should()
                 .BeTrue();
@@ -699,7 +699,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 retrievedResource.DisplayName = newDisplayName;
                 retrievedResource.UserClaims = newClaims;
 
-                var updateResult = await scope.ResourceStoreAdditions.UpdateApiResourceAsync(retrievedResource);
+                var updateResult = await scope.ResourceStoreExtension.UpdateApiResourceAsync(retrievedResource);
                 updateResult.IsSuccess.Should().BeTrue();
             }
 
@@ -730,7 +730,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             };
 
             var scope0 = InitializeServices();
-            (await scope0.ResourceStoreAdditions.CreateApiResourceAsync(testResource))
+            (await scope0.ResourceStoreExtension.CreateApiResourceAsync(testResource))
                 .IsSuccess
                 .Should()
                 .BeTrue();
@@ -761,14 +761,14 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 retrievedResource2.DisplayName = newDisplayName;
                 retrievedResource2.UserClaims = newClaims;
 
-                var updateResult2 = await scope2.ResourceStoreAdditions.UpdateApiResourceAsync(retrievedResource2);
+                var updateResult2 = await scope2.ResourceStoreExtension.UpdateApiResourceAsync(retrievedResource2);
                 updateResult2.IsSuccess.Should().BeTrue();
             }
 
             retrievedResource.DisplayName = newDisplayName;
             retrievedResource.UserClaims = newClaims;
 
-            var updateResult = await scope1.ResourceStoreAdditions.UpdateApiResourceAsync(retrievedResource);
+            var updateResult = await scope1.ResourceStoreExtension.UpdateApiResourceAsync(retrievedResource);
 
             scope0.DocumentSession.Advanced.NumberOfRequests.Should().Be(1, "used to just insert");
             scope2.DocumentSession.Advanced.NumberOfRequests.Should().Be(2, "used to get and update");
@@ -782,14 +782,14 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
         public async Task ShouldDeleteExistingApiResource()
         {
             var scope0 = InitializeServices();
-            (await scope0.ResourceStoreAdditions.CreateApiResourceAsync(
+            (await scope0.ResourceStoreExtension.CreateApiResourceAsync(
                 new ApiResource
                 {
                     Name = "test-name",
                     UserClaims = new List<string> { "claim1", "claim2" },
                 }
             )).IsSuccess.Should().BeTrue();
-            (await scope0.ResourceStoreAdditions.CreateApiResourceAsync(
+            (await scope0.ResourceStoreExtension.CreateApiResourceAsync(
                 new ApiResource
                 {
                     Name = "test-name-2",
@@ -811,7 +811,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 var retrievedResource2 = dbResults.Last();
                 retrievedResource2.Should().NotBeNull();
 
-                (await scope2.ResourceStoreAdditions.DeleteApiResourceAsync("test-name-2")).IsSuccess.Should().BeTrue();
+                (await scope2.ResourceStoreExtension.DeleteApiResourceAsync("test-name-2")).IsSuccess.Should().BeTrue();
             }
 
             {
@@ -827,7 +827,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             }
 
             var removeNonExistingResult = await InitializeServices()
-                .ResourceStoreAdditions
+                .ResourceStoreExtension
                 .DeleteApiResourceAsync("non-existing-name");
             removeNonExistingResult.IsSuccess.Should().BeFalse();
             removeNonExistingResult.Error.Should().StartWith("Entity not found");
@@ -845,7 +845,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 Name = "test-name",
             };
 
-            (await InitializeServices().ResourceStoreAdditions.CreateApiScopeAsync(testResource)).IsSuccess
+            (await InitializeServices().ResourceStoreExtension.CreateApiScopeAsync(testResource)).IsSuccess
                 .Should().BeTrue();
             var fromDb = (await InitializeServices()
                 .ResourceStore
@@ -863,11 +863,11 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 Name = "test-name",
             };
 
-            (await InitializeServices().ResourceStoreAdditions.CreateApiScopeAsync(testResource))
+            (await InitializeServices().ResourceStoreExtension.CreateApiScopeAsync(testResource))
                 .IsSuccess
                 .Should()
                 .BeTrue();
-            (await InitializeServices().ResourceStoreAdditions.CreateApiScopeAsync(testResource))
+            (await InitializeServices().ResourceStoreExtension.CreateApiScopeAsync(testResource))
                 .IsSuccess
                 .Should()
                 .BeFalse("resource already created.");
@@ -876,7 +876,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             {
                 Name = "test-name",
             };
-            (await InitializeServices().ResourceStoreAdditions.CreateApiScopeAsync(restResource2))
+            (await InitializeServices().ResourceStoreExtension.CreateApiScopeAsync(restResource2))
                 .IsSuccess
                 .Should()
                 .BeFalse("resource with same name already exists.");
@@ -886,7 +886,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
         public async Task ShouldNotAddApiScopeIfMissingName()
         {
             {
-                var result = await InitializeServices().ResourceStoreAdditions.CreateApiScopeAsync(
+                var result = await InitializeServices().ResourceStoreExtension.CreateApiScopeAsync(
                     new ApiScope
                     {
                         Name = string.Empty,
@@ -897,7 +897,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             }
 
             {
-                var result = await InitializeServices().ResourceStoreAdditions.CreateApiScopeAsync(
+                var result = await InitializeServices().ResourceStoreExtension.CreateApiScopeAsync(
                     new ApiScope
                     {
                         Name = null,
@@ -916,7 +916,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 Name = "test-name",
             };
 
-            (await InitializeServices().ResourceStoreAdditions.CreateApiScopeAsync(testResource))
+            (await InitializeServices().ResourceStoreExtension.CreateApiScopeAsync(testResource))
                 .IsSuccess
                 .Should()
                 .BeTrue();
@@ -932,7 +932,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             var retrievedResource = dbResults.First();
             retrievedResource.Name = Guid.NewGuid().ToString();
 
-            var updateResult = await scope.ResourceStoreAdditions.UpdateApiScopeAsync(retrievedResource);
+            var updateResult = await scope.ResourceStoreExtension.UpdateApiScopeAsync(retrievedResource);
             updateResult.IsSuccess.Should().BeFalse();
             updateResult.Error.Should().StartWith("Entity not found.");
         }
@@ -947,7 +947,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 UserClaims = new List<string> { "claim1", "claim2" },
             };
 
-            (await InitializeServices().ResourceStoreAdditions.CreateApiScopeAsync(testResource))
+            (await InitializeServices().ResourceStoreExtension.CreateApiScopeAsync(testResource))
                 .IsSuccess
                 .Should()
                 .BeTrue();
@@ -970,7 +970,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 retrievedResource.DisplayName = newDisplayName;
                 retrievedResource.UserClaims = newClaims;
 
-                var updateResult = await scope.ResourceStoreAdditions.UpdateApiScopeAsync(retrievedResource);
+                var updateResult = await scope.ResourceStoreExtension.UpdateApiScopeAsync(retrievedResource);
                 updateResult.IsSuccess.Should().BeTrue();
             }
 
@@ -1001,7 +1001,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             };
 
             var scope0 = InitializeServices();
-            (await scope0.ResourceStoreAdditions.CreateApiScopeAsync(testResource))
+            (await scope0.ResourceStoreExtension.CreateApiScopeAsync(testResource))
                 .IsSuccess
                 .Should()
                 .BeTrue();
@@ -1032,14 +1032,14 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 retrievedResource2.DisplayName = newDisplayName;
                 retrievedResource2.UserClaims = newClaims;
 
-                var updateResult2 = await scope2.ResourceStoreAdditions.UpdateApiScopeAsync(retrievedResource2);
+                var updateResult2 = await scope2.ResourceStoreExtension.UpdateApiScopeAsync(retrievedResource2);
                 updateResult2.IsSuccess.Should().BeTrue();
             }
 
             retrievedResource.DisplayName = newDisplayName;
             retrievedResource.UserClaims = newClaims;
 
-            var updateResult = await scope1.ResourceStoreAdditions.UpdateApiScopeAsync(retrievedResource);
+            var updateResult = await scope1.ResourceStoreExtension.UpdateApiScopeAsync(retrievedResource);
 
             scope0.DocumentSession.Advanced.NumberOfRequests.Should().Be(1, "used to just insert");
             scope2.DocumentSession.Advanced.NumberOfRequests.Should().Be(2, "used to get and update");
@@ -1053,14 +1053,14 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
         public async Task ShouldDeleteExistingApiScope()
         {
             var scope0 = InitializeServices();
-            (await scope0.ResourceStoreAdditions.CreateApiScopeAsync(
+            (await scope0.ResourceStoreExtension.CreateApiScopeAsync(
                 new ApiScope
                 {
                     Name = "test-name",
                     UserClaims = new List<string> { "claim1", "claim2" },
                 }
             )).IsSuccess.Should().BeTrue();
-            (await scope0.ResourceStoreAdditions.CreateApiScopeAsync(
+            (await scope0.ResourceStoreExtension.CreateApiScopeAsync(
                 new ApiScope
                 {
                     Name = "test-name-2",
@@ -1082,7 +1082,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 var retrievedResource2 = dbResults.Last();
                 retrievedResource2.Should().NotBeNull();
 
-                (await scope2.ResourceStoreAdditions.DeleteApiScopeAsync("test-name-2")).IsSuccess.Should().BeTrue();
+                (await scope2.ResourceStoreExtension.DeleteApiScopeAsync("test-name-2")).IsSuccess.Should().BeTrue();
             }
 
             {
@@ -1098,7 +1098,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             }
 
             var removeNonExistingResult = await InitializeServices()
-                .ResourceStoreAdditions
+                .ResourceStoreExtension
                 .DeleteApiScopeAsync("non-existing-name");
             removeNonExistingResult.IsSuccess.Should().BeFalse();
             removeNonExistingResult.Error.Should().StartWith("Entity not found");

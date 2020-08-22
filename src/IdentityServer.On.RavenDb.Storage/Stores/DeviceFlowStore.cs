@@ -6,7 +6,6 @@ using IdentityServer4.Stores;
 using IdentityServer4.Stores.Serialization;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Entities;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Mappers;
-using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Additions;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Exceptions;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Extensions;
 using Microsoft.Extensions.Logging;

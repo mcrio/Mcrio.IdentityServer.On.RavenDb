@@ -3,7 +3,7 @@ using IdentityServer4.Models;
 using Mcrio.AspNetCore.Identity.On.RavenDb;
 using Mcrio.AspNetCore.Identity.On.RavenDb.Model.User;
 using Mcrio.IdentityServer.On.RavenDb.Storage;
-using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Additions;
+using Mcrio.IdentityServer.On.RavenDb.Storage.Stores;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
@@ -74,10 +74,10 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
         {
             using IServiceScope scope = host.Services.CreateScope();
 
-            IResourceStoreAdditions<IdentityResource, ApiResource, ApiScope> apiResourceStoreAdditions =
-                scope.ServiceProvider.GetRequiredService<IResourceStoreAdditions<IdentityResource, ApiResource, ApiScope>>();
-            IClientStoreAdditions<Client> clientStoreAdditions =
-                scope.ServiceProvider.GetRequiredService<IClientStoreAdditions<Client>>();
+            IResourceStoreExtension<IdentityResource, ApiResource, ApiScope> apiResourceStoreExtension =
+                scope.ServiceProvider.GetRequiredService<IResourceStoreExtension<IdentityResource, ApiResource, ApiScope>>();
+            IClientStoreExtension<Client> clientStoreExtension =
+                scope.ServiceProvider.GetRequiredService<IClientStoreExtension<Client>>();
 
             IAsyncDocumentSession identityServerDocumentSession =
                 scope.ServiceProvider.GetRequiredService<IdentityServerDocumentSessionProvider>()();
@@ -89,7 +89,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
             {
                 foreach (ApiResource apiResource in TestData.GetApiResources())
                 {
-                    apiResourceStoreAdditions.CreateApiResourceAsync(apiResource).GetAwaiter().GetResult();
+                    apiResourceStoreExtension.CreateApiResourceAsync(apiResource).GetAwaiter().GetResult();
                 }
             }
 
@@ -100,7 +100,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
             {
                 foreach (Client client in TestData.GetClients())
                 {
-                    clientStoreAdditions.CreateAsync(client).GetAwaiter().GetResult();
+                    clientStoreExtension.CreateAsync(client).GetAwaiter().GetResult();
                 }
             }
 
@@ -111,7 +111,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
             {
                 foreach (ApiScope apiScope in TestData.GetScopes())
                 {
-                    apiResourceStoreAdditions.CreateApiScopeAsync(apiScope).GetAwaiter().GetResult();
+                    apiResourceStoreExtension.CreateApiScopeAsync(apiScope).GetAwaiter().GetResult();
                 }
             }
 
@@ -122,7 +122,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
             {
                 foreach (IdentityResource identityResource in TestData.GetIdentityResources())
                 {
-                    apiResourceStoreAdditions.CreateIdentityResourceAsync(identityResource).GetAwaiter().GetResult();
+                    apiResourceStoreExtension.CreateIdentityResourceAsync(identityResource).GetAwaiter().GetResult();
                 }
             }
         }

@@ -3,7 +3,6 @@ using IdentityServer4.Models;
 using Mcrio.IdentityServer.On.RavenDb.Storage;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Cors;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Stores;
-using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Additions;
 using Mcrio.IdentityServer.On.RavenDb.Storage.TokenCleanup;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -28,7 +27,7 @@ namespace Mcrio.IdentityServer.On.RavenDb
             bool addOperationalStore = true)
         {
             return AddRavenDbStores<ClientStore, ResourceStore, CorsPolicyService,
-                ClientStoreAdditions, ResourceStoreAdditions, PersistedGrantStore, DeviceFlowStore,
+                ClientStoreExtension, ResourceStoreExtension, PersistedGrantStore, DeviceFlowStore,
                 TokenCleanupService, TokenCleanupBackgroundService, Client, Storage.Entities.Client,
                 IdentityResource, Storage.Entities.IdentityResource, ApiResource, Storage.Entities.ApiResource,
                 ApiScope, Storage.Entities.ApiScope, Storage.Entities.PersistedGrant, Storage.Entities.DeviceFlowCode>(
@@ -46,7 +45,7 @@ namespace Mcrio.IdentityServer.On.RavenDb
         /// </summary>
         /// <returns>Identity server builder.</returns>
         public static IIdentityServerBuilder AddRavenDbStores<TClientStore, TResourceStore, TCorsPolicyService,
-            TClientStoreAdditions, TResourceStoreAdditions, TPersistedGrantStore, TDeviceFlowStore,
+            TClientStoreExtension, TResourceStoreExtension, TPersistedGrantStore, TDeviceFlowStore,
             TTokenCleanupService, TTokenCleanupBackgroundService, TClient, TClientEntity,
             TIdentityResource, TIdentityResourceEntity, TApiResource, TApiResourceEntity,
             TApiScope, TApiScopeEntity, TPersistedGrantEntity, TDeviceFlowCode>(
@@ -59,8 +58,8 @@ namespace Mcrio.IdentityServer.On.RavenDb
             where TClientStore : ClientStore<TClientEntity>
             where TResourceStore : ResourceStore<TIdentityResourceEntity, TApiResourceEntity, TApiScopeEntity>
             where TCorsPolicyService : CorsPolicyService<TClientEntity>
-            where TClientStoreAdditions : ClientStoreAdditions<TClient, TClientEntity>
-            where TResourceStoreAdditions : ResourceStoreAdditions<TIdentityResource, TIdentityResourceEntity,
+            where TClientStoreExtension : ClientStoreExtension<TClient, TClientEntity>
+            where TResourceStoreExtension : ResourceStoreExtension<TIdentityResource, TIdentityResourceEntity,
                 TApiResource, TApiResourceEntity, TApiScope, TApiScopeEntity>
             where TPersistedGrantStore : PersistedGrantStore<TPersistedGrantEntity>
             where TDeviceFlowStore : DeviceFlowStore<TDeviceFlowCode>
@@ -85,10 +84,10 @@ namespace Mcrio.IdentityServer.On.RavenDb
                 builder.AddResourceStore<TResourceStore>();
                 builder.AddCorsPolicyService<TCorsPolicyService>();
 
-                builder.Services.TryAddTransient<IClientStoreAdditions<TClient>, TClientStoreAdditions>();
+                builder.Services.TryAddTransient<IClientStoreExtension<TClient>, TClientStoreExtension>();
                 builder.Services.TryAddTransient<
-                    IResourceStoreAdditions<TIdentityResource, TApiResource, TApiScope>,
-                    TResourceStoreAdditions
+                    IResourceStoreExtension<TIdentityResource, TApiResource, TApiScope>,
+                    TResourceStoreExtension
                 >();
             }
 

@@ -3,32 +3,31 @@ using System.Threading;
 using System.Threading.Tasks;
 using IdentityServer4.Models;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Mappers;
-using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Additions;
 using Microsoft.Extensions.Logging;
 using Raven.Client.Documents.Session;
 using Raven.Client.Exceptions;
 
 namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
 {
-    public class ClientStoreAdditions : ClientStoreAdditions<Client, Entities.Client>
+    public class ClientStoreExtension : ClientStoreExtension<Client, Entities.Client>
     {
-        public ClientStoreAdditions(
+        public ClientStoreExtension(
             IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             IIdentityServerStoreMapper mapper,
-            ILogger<ClientStoreAdditions<Client, Entities.Client>> logger)
+            ILogger<ClientStoreExtension<Client, Entities.Client>> logger)
             : base(identityServerDocumentSessionProvider, mapper, logger)
         {
         }
     }
 
-    public abstract class ClientStoreAdditions<TClientModel, TClientEntity> : IClientStoreAdditions<TClientModel>
+    public abstract class ClientStoreExtension<TClientModel, TClientEntity> : IClientStoreExtension<TClientModel>
         where TClientModel : Client
         where TClientEntity : Entities.Client
     {
-        protected ClientStoreAdditions(
+        protected ClientStoreExtension(
             IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             IIdentityServerStoreMapper mapper,
-            ILogger<ClientStoreAdditions<TClientModel, TClientEntity>> logger)
+            ILogger<ClientStoreExtension<TClientModel, TClientEntity>> logger)
         {
             DocumentSession = identityServerDocumentSessionProvider();
             Mapper = mapper;
@@ -39,7 +38,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
 
         protected IIdentityServerStoreMapper Mapper { get; }
 
-        protected ILogger<ClientStoreAdditions<TClientModel, TClientEntity>> Logger { get; }
+        protected ILogger<ClientStoreExtension<TClientModel, TClientEntity>> Logger { get; }
 
         public virtual async Task<StoreResult> CreateAsync(
             TClientModel client,

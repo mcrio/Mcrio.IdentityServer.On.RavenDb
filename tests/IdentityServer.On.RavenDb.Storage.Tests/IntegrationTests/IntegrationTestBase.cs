@@ -8,7 +8,6 @@ using IdentityServer4.Stores.Serialization;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Cors;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Mappers;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Stores;
-using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Additions;
 using Mcrio.IdentityServer.On.RavenDb.Storage.TokenCleanup;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -72,9 +71,9 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests
             serviceCollection.TryAddTransient<IResourceStore, ResourceStore>();
             serviceCollection.TryAddTransient<ICorsPolicyService, CorsPolicyService>();
 
-            serviceCollection.TryAddTransient<IClientStoreAdditions<Client>, ClientStoreAdditions>();
-            serviceCollection.TryAddTransient<IResourceStoreAdditions<IdentityResource, ApiResource, ApiScope>,
-                ResourceStoreAdditions>();
+            serviceCollection.TryAddTransient<IClientStoreExtension<Client>, ClientStoreExtension>();
+            serviceCollection.TryAddTransient<IResourceStoreExtension<IdentityResource, ApiResource, ApiScope>,
+                ResourceStoreExtension>();
 
             // Identity server other services required for tests
             serviceCollection.TryAddSingleton<IPersistentGrantSerializer, PersistentGrantSerializer>();
@@ -91,8 +90,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests
                 serviceProvider.GetRequiredService<IAsyncDocumentSession>(),
                 serviceProvider.GetRequiredService<ICorsPolicyService>(),
                 serviceProvider.GetRequiredService<ITokenCleanupService>(),
-                serviceProvider.GetRequiredService<IClientStoreAdditions<Client>>(),
-                serviceProvider.GetRequiredService<IResourceStoreAdditions<IdentityResource, ApiResource, ApiScope>>()
+                serviceProvider.GetRequiredService<IClientStoreExtension<Client>>(),
+                serviceProvider.GetRequiredService<IResourceStoreExtension<IdentityResource, ApiResource, ApiScope>>()
             );
         }
 

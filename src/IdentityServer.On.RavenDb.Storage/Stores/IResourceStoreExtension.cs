@@ -2,9 +2,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using IdentityServer4.Models;
 
-namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Additions
+namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
 {
-    public interface IResourceStoreAdditions<TIdentityResourceModel, TApiResourceModel, TApiScopeModel>
+    public interface IResourceStoreExtension<TIdentityResourceModel, TApiResourceModel, TApiScopeModel>
         where TIdentityResourceModel : IdentityResource
         where TApiResourceModel : ApiResource
         where TApiScopeModel : ApiScope

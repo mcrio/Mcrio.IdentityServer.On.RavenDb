@@ -2,7 +2,7 @@ using IdentityServer4.Models;
 using IdentityServer4.Services;
 using IdentityServer4.Stores;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Mappers;
-using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Additions;
+using Mcrio.IdentityServer.On.RavenDb.Storage.Stores;
 using Mcrio.IdentityServer.On.RavenDb.Storage.TokenCleanup;
 using Raven.Client.Documents;
 using Raven.Client.Documents.Session;
@@ -21,8 +21,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests
             IAsyncDocumentSession documentSession,
             ICorsPolicyService corsPolicyService,
             ITokenCleanupService tokenCleanupService,
-            IClientStoreAdditions<Client> clientStoreAdditions,
-            IResourceStoreAdditions<IdentityResource, ApiResource, ApiScope> resourceStoreAdditions)
+            IClientStoreExtension<Client> clientStoreExtension,
+            IResourceStoreExtension<IdentityResource, ApiResource, ApiScope> resourceStoreExtension)
         {
             ClientStore = clientStore;
             ResourceStore = resourceStore;
@@ -32,8 +32,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests
             DocumentSession = documentSession;
             CorsPolicyService = corsPolicyService;
             TokenCleanupService = tokenCleanupService;
-            ClientStoreAdditions = clientStoreAdditions;
-            ResourceStoreAdditions = resourceStoreAdditions;
+            ClientStoreExtension = clientStoreExtension;
+            ResourceStoreExtension = resourceStoreExtension;
             DocumentStore = documentStore;
         }
 
@@ -41,11 +41,11 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests
 
         internal IClientStore ClientStore { get; }
 
-        internal IClientStoreAdditions<Client> ClientStoreAdditions { get; }
+        internal IClientStoreExtension<Client> ClientStoreExtension { get; }
 
         internal IResourceStore ResourceStore { get; }
 
-        internal IResourceStoreAdditions<IdentityResource, ApiResource, ApiScope> ResourceStoreAdditions { get; }
+        internal IResourceStoreExtension<IdentityResource, ApiResource, ApiScope> ResourceStoreExtension { get; }
 
         internal IDeviceFlowStore DeviceFlowStore { get; }
 
