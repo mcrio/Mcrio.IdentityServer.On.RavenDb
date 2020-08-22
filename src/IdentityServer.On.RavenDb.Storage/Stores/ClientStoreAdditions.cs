@@ -10,23 +10,40 @@ using Raven.Client.Exceptions;
 
 namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
 {
-    internal class ClientStoreAdditions : IClientStoreAdditions
+    public class ClientStoreAdditions : ClientStoreAdditions<Client, Entities.Client>
     {
-        private readonly IAsyncDocumentSession _documentSession;
-        private readonly IIdentityServerStoreMapper _mapper;
-        private readonly ILogger<ClientStore> _logger;
-
         public ClientStoreAdditions(
             IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             IIdentityServerStoreMapper mapper,
-            ILogger<ClientStore> logger)
+            ILogger<ClientStoreAdditions<Client, Entities.Client>> logger)
+            : base(identityServerDocumentSessionProvider, mapper, logger)
         {
-            _documentSession = identityServerDocumentSessionProvider();
-            _mapper = mapper;
-            _logger = logger;
+        }
+    }
+
+    public abstract class ClientStoreAdditions<TClientModel, TClientEntity> : IClientStoreAdditions<TClientModel>
+        where TClientModel : Client
+        where TClientEntity : Entities.Client
+    {
+        protected ClientStoreAdditions(
+            IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
+            IIdentityServerStoreMapper mapper,
+            ILogger<ClientStoreAdditions<TClientModel, TClientEntity>> logger)
+        {
+            DocumentSession = identityServerDocumentSessionProvider();
+            Mapper = mapper;
+            Logger = logger;
         }
 
-        public async Task<StoreResult> CreateAsync(Client client, CancellationToken cancellationToken = default)
+        protected IAsyncDocumentSession DocumentSession { get; }
+
+        protected IIdentityServerStoreMapper Mapper { get; }
+
+        protected ILogger<ClientStoreAdditions<TClientModel, TClientEntity>> Logger { get; }
+
+        public virtual async Task<StoreResult> CreateAsync(
+            TClientModel client,
+            CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -35,7 +52,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                 throw new ArgumentNullException(nameof(client));
             }
 
-            Entities.Client entity = _mapper.ToEntity(client);
+            TClientEntity entity = Mapper.ToEntity<TClientModel, TClientEntity>(client);
 
             if (!CheckRequiredFields(entity, out string errorMsg))
             {
@@ -44,7 +61,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
 
             try
             {
-                await _documentSession
+                await DocumentSession
                     .StoreAsync(
                         entity,
                         string.Empty,
@@ -52,12 +69,12 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                         cancellationToken
                     )
                     .ConfigureAwait(false);
-                await _documentSession.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                await DocumentSession.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                 return StoreResult.Success();
             }
             catch (ConcurrencyException concurrencyException)
             {
-                _logger.LogError(
+                Logger.LogError(
                     concurrencyException,
                     "Error creating client. ClientId {0}; Entity ID {1}",
                     client.ClientId,
@@ -67,7 +84,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
             catch (Exception ex)
             {
-                _logger.LogError(
+                Logger.LogError(
                     ex,
                     "Error creating client. ClientId {0}; Entity ID {1}",
                     client.ClientId,
@@ -77,7 +94,9 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
         }
 
-        public async Task<StoreResult> UpdateAsync(Client client, CancellationToken cancellationToken = default)
+        public virtual async Task<StoreResult> UpdateAsync(
+            TClientModel client,
+            CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -86,7 +105,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                 throw new ArgumentNullException(nameof(client));
             }
 
-            Entities.Client updatedEntity = _mapper.ToEntity(client);
+            TClientEntity updatedEntity = Mapper.ToEntity<TClientModel, TClientEntity>(client);
 
             if (!CheckRequiredFields(updatedEntity, out string errorMsg))
             {
@@ -94,8 +113,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
 
             string entityId = updatedEntity.Id;
-            Entities.Client entityInSession = await _documentSession
-                .LoadAsync<Entities.Client>(entityId, cancellationToken)
+            TClientEntity entityInSession = await DocumentSession
+                .LoadAsync<TClientEntity>(entityId, cancellationToken)
                 .ConfigureAwait(false);
 
             if (entityInSession is null)
@@ -103,20 +122,20 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                 return StoreResult.Failure(string.Format(ErrorDescriber.EntityNotFound, entityId));
             }
 
-            _mapper.Map(updatedEntity, entityInSession);
+            Mapper.Map(updatedEntity, entityInSession);
 
             try
             {
-                string changeVector = _documentSession.Advanced.GetChangeVectorFor(entityInSession);
-                await _documentSession
+                string changeVector = DocumentSession.Advanced.GetChangeVectorFor(entityInSession);
+                await DocumentSession
                     .StoreAsync(entityInSession, changeVector, entityInSession.Id, cancellationToken)
                     .ConfigureAwait(false);
-                await _documentSession.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                await DocumentSession.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                 return StoreResult.Success();
             }
             catch (ConcurrencyException concurrencyException)
             {
-                _logger.LogError(
+                Logger.LogError(
                     concurrencyException,
                     "Error updating client. Entity ID {1}",
                     entityId
@@ -125,7 +144,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
             catch (Exception ex)
             {
-                _logger.LogError(
+                Logger.LogError(
                     ex,
                     "Error updating client. Entity ID {1}",
                     entityId
@@ -134,7 +153,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
         }
 
-        public async Task<StoreResult> DeleteAsync(string clientId, CancellationToken cancellationToken = default)
+        public virtual async Task<StoreResult> DeleteAsync(string clientId,
+            CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -143,10 +163,10 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                 throw new ArgumentNullException(nameof(clientId));
             }
 
-            string entityId = _mapper.CreateEntityId<Entities.Client>(clientId);
+            string entityId = Mapper.CreateEntityId<TClientEntity>(clientId);
 
-            Entities.Client entityInSession = await _documentSession
-                .LoadAsync<Entities.Client>(
+            TClientEntity entityInSession = await DocumentSession
+                .LoadAsync<TClientEntity>(
                     entityId,
                     cancellationToken)
                 .ConfigureAwait(false);
@@ -158,14 +178,14 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
 
             try
             {
-                string changeVector = _documentSession.Advanced.GetChangeVectorFor(entityInSession);
-                _documentSession.Delete(entityId, changeVector);
-                await _documentSession.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                string changeVector = DocumentSession.Advanced.GetChangeVectorFor(entityInSession);
+                DocumentSession.Delete(entityId, changeVector);
+                await DocumentSession.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                 return StoreResult.Success();
             }
             catch (ConcurrencyException concurrencyException)
             {
-                _logger.LogError(
+                Logger.LogError(
                     concurrencyException,
                     "Error deleting client. Entity ID {1}",
                     entityId
@@ -174,7 +194,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
             catch (Exception ex)
             {
-                _logger.LogError(
+                Logger.LogError(
                     ex,
                     "Error deleting client. Entity ID {1}",
                     entityId
@@ -183,7 +203,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
         }
 
-        private static bool CheckRequiredFields(Entities.Client clientEntity, out string errorMessage)
+        protected virtual bool CheckRequiredFields(TClientEntity clientEntity, out string errorMessage)
         {
             errorMessage = string.Empty;
 

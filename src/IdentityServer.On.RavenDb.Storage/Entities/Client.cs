@@ -4,7 +4,7 @@ using IdentityServer4.Models;
 
 namespace Mcrio.IdentityServer.On.RavenDb.Storage.Entities
 {
-    public class Client
+    public class Client: IEntity
     {
         public string Id { get; set; }
         public bool Enabled { get; set; } = true;

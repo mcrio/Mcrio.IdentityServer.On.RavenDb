@@ -10,24 +10,49 @@ using Raven.Client.Exceptions;
 
 namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
 {
-    internal class ResourceStoreAdditions : IResourceStoreAdditions
+    public class ResourceStoreAdditions : ResourceStoreAdditions<IdentityResource, Entities.IdentityResource,
+        ApiResource, Entities.ApiResource, ApiScope, Entities.ApiScope>
     {
-        private readonly IAsyncDocumentSession _documentSession;
-        private readonly IIdentityServerStoreMapper _mapper;
-        private readonly ILogger<ResourceStore> _logger;
-
         public ResourceStoreAdditions(
             IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             IIdentityServerStoreMapper mapper,
-            ILogger<ResourceStore> logger)
+            ILogger<ResourceStoreAdditions<IdentityResource, Entities.IdentityResource, ApiResource,
+                Entities.ApiResource, ApiScope, Entities.ApiScope>> logger)
+            : base(identityServerDocumentSessionProvider, mapper, logger)
         {
-            _documentSession = identityServerDocumentSessionProvider();
-            _mapper = mapper;
-            _logger = logger;
+        }
+    }
+
+    public abstract class ResourceStoreAdditions<TIdentityResourceModel, TIdentityResourceEntity,
+            TApiResourceModel, TApiResourceEntity, TApiScopeModel, TApiScopeEntity>
+        : IResourceStoreAdditions<TIdentityResourceModel, TApiResourceModel, TApiScopeModel>
+        where TIdentityResourceModel : IdentityResource
+        where TIdentityResourceEntity : Entities.IdentityResource
+        where TApiResourceModel : ApiResource
+        where TApiResourceEntity : Entities.ApiResource
+        where TApiScopeModel : ApiScope
+        where TApiScopeEntity : Entities.ApiScope
+    {
+        protected ResourceStoreAdditions(
+            IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
+            IIdentityServerStoreMapper mapper,
+            ILogger<ResourceStoreAdditions<TIdentityResourceModel, TIdentityResourceEntity,
+                TApiResourceModel, TApiResourceEntity, TApiScopeModel, TApiScopeEntity>> logger)
+        {
+            DocumentSession = identityServerDocumentSessionProvider();
+            Mapper = mapper;
+            Logger = logger;
         }
 
-        public async Task<StoreResult> CreateIdentityResourceAsync(
-            IdentityResource identityResource,
+        protected IAsyncDocumentSession DocumentSession { get; }
+
+        protected IIdentityServerStoreMapper Mapper { get; }
+
+        protected ILogger<ResourceStoreAdditions<TIdentityResourceModel, TIdentityResourceEntity,
+            TApiResourceModel, TApiResourceEntity, TApiScopeModel, TApiScopeEntity>> Logger { get; }
+
+        public virtual async Task<StoreResult> CreateIdentityResourceAsync(
+            TIdentityResourceModel identityResource,
             CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -37,7 +62,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                 throw new ArgumentNullException(nameof(identityResource));
             }
 
-            Entities.IdentityResource entity = _mapper.ToEntity(identityResource);
+            TIdentityResourceEntity entity =
+                Mapper.ToEntity<TIdentityResourceModel, TIdentityResourceEntity>(identityResource);
 
             if (!CheckRequiredFields(entity, out string errorMsg))
             {
@@ -46,7 +72,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
 
             try
             {
-                await _documentSession
+                await DocumentSession
                     .StoreAsync(
                         entity,
                         string.Empty,
@@ -54,12 +80,12 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                         cancellationToken
                     )
                     .ConfigureAwait(false);
-                await _documentSession.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                await DocumentSession.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                 return StoreResult.Success();
             }
             catch (ConcurrencyException concurrencyException)
             {
-                _logger.LogError(
+                Logger.LogError(
                     concurrencyException,
                     "Error creating identity resource. Resource name {0}; Entity ID {1}",
                     identityResource.Name,
@@ -69,7 +95,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
             catch (Exception ex)
             {
-                _logger.LogError(
+                Logger.LogError(
                     ex,
                     "Error creating identity resource. Resource name {0}; Entity ID {1}",
                     identityResource.Name,
@@ -79,7 +105,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
         }
 
-        public async Task<StoreResult> UpdateIdentityResourceAsync(IdentityResource identityResource,
+        public virtual async Task<StoreResult> UpdateIdentityResourceAsync(
+            TIdentityResourceModel identityResource,
             CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -89,7 +116,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                 throw new ArgumentNullException(nameof(identityResource));
             }
 
-            Entities.IdentityResource updatedEntity = _mapper.ToEntity(identityResource);
+            TIdentityResourceEntity updatedEntity =
+                Mapper.ToEntity<TIdentityResourceModel, TIdentityResourceEntity>(identityResource);
 
             if (!CheckRequiredFields(updatedEntity, out string errorMsg))
             {
@@ -97,8 +125,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
 
             string entityId = updatedEntity.Id;
-            Entities.IdentityResource entityInSession = await _documentSession
-                .LoadAsync<Entities.IdentityResource>(entityId, cancellationToken)
+            TIdentityResourceEntity entityInSession = await DocumentSession
+                .LoadAsync<TIdentityResourceEntity>(entityId, cancellationToken)
                 .ConfigureAwait(false);
 
             if (entityInSession is null)
@@ -106,20 +134,20 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                 return StoreResult.Failure(string.Format(ErrorDescriber.EntityNotFound, entityId));
             }
 
-            _mapper.Map(updatedEntity, entityInSession);
+            Mapper.Map(updatedEntity, entityInSession);
 
             try
             {
-                string changeVector = _documentSession.Advanced.GetChangeVectorFor(entityInSession);
-                await _documentSession
+                string changeVector = DocumentSession.Advanced.GetChangeVectorFor(entityInSession);
+                await DocumentSession
                     .StoreAsync(entityInSession, changeVector, entityInSession.Id, cancellationToken)
                     .ConfigureAwait(false);
-                await _documentSession.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                await DocumentSession.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                 return StoreResult.Success();
             }
             catch (ConcurrencyException concurrencyException)
             {
-                _logger.LogError(
+                Logger.LogError(
                     concurrencyException,
                     "Error updating identity resource. Entity ID {1}",
                     entityId
@@ -128,7 +156,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
             catch (Exception ex)
             {
-                _logger.LogError(
+                Logger.LogError(
                     ex,
                     "Error updating identity resource. Entity ID {1}",
                     entityId
@@ -137,7 +165,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
         }
 
-        public async Task<StoreResult> DeleteIdentityResourceAsync(
+        public virtual async Task<StoreResult> DeleteIdentityResourceAsync(
             string identityResourceName,
             CancellationToken cancellationToken = default)
         {
@@ -148,10 +176,10 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                 throw new ArgumentNullException(nameof(identityResourceName));
             }
 
-            string entityId = _mapper.CreateEntityId<Entities.IdentityResource>(identityResourceName);
+            string entityId = Mapper.CreateEntityId<TIdentityResourceEntity>(identityResourceName);
 
-            Entities.IdentityResource entityInSession = await _documentSession
-                .LoadAsync<Entities.IdentityResource>(
+            TIdentityResourceEntity entityInSession = await DocumentSession
+                .LoadAsync<TIdentityResourceEntity>(
                     entityId,
                     cancellationToken)
                 .ConfigureAwait(false);
@@ -163,14 +191,14 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
 
             try
             {
-                string changeVector = _documentSession.Advanced.GetChangeVectorFor(entityInSession);
-                _documentSession.Delete(entityId, changeVector);
-                await _documentSession.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                string changeVector = DocumentSession.Advanced.GetChangeVectorFor(entityInSession);
+                DocumentSession.Delete(entityId, changeVector);
+                await DocumentSession.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                 return StoreResult.Success();
             }
             catch (ConcurrencyException concurrencyException)
             {
-                _logger.LogError(
+                Logger.LogError(
                     concurrencyException,
                     "Error deleting identity resource. Entity ID {1}",
                     entityId
@@ -179,7 +207,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
             catch (Exception ex)
             {
-                _logger.LogError(
+                Logger.LogError(
                     ex,
                     "Error deleting identity resource. Entity ID {1}",
                     entityId
@@ -188,8 +216,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
         }
 
-        public async Task<StoreResult> CreateApiResourceAsync(
-            ApiResource apiResource,
+        public virtual async Task<StoreResult> CreateApiResourceAsync(
+            TApiResourceModel apiResource,
             CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -199,7 +227,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                 throw new ArgumentNullException(nameof(apiResource));
             }
 
-            Entities.ApiResource entity = _mapper.ToEntity(apiResource);
+            TApiResourceEntity entity = Mapper.ToEntity<TApiResourceModel, TApiResourceEntity>(apiResource);
 
             if (!CheckRequiredFields(entity, out string errorMsg))
             {
@@ -208,7 +236,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
 
             try
             {
-                await _documentSession
+                await DocumentSession
                     .StoreAsync(
                         entity,
                         string.Empty,
@@ -216,12 +244,12 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                         cancellationToken
                     )
                     .ConfigureAwait(false);
-                await _documentSession.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                await DocumentSession.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                 return StoreResult.Success();
             }
             catch (ConcurrencyException concurrencyException)
             {
-                _logger.LogError(
+                Logger.LogError(
                     concurrencyException,
                     "Error creating api resource. Resource name {0}; Entity ID {1}",
                     apiResource.Name,
@@ -231,7 +259,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
             catch (Exception ex)
             {
-                _logger.LogError(
+                Logger.LogError(
                     ex,
                     "Error creating api resource. Resource name {0}; Entity ID {1}",
                     apiResource.Name,
@@ -242,8 +270,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
         }
 
         /// <inheritdoc/>
-        public async Task<StoreResult> UpdateApiResourceAsync(
-            ApiResource apiResource,
+        public virtual async Task<StoreResult> UpdateApiResourceAsync(
+            TApiResourceModel apiResource,
             CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -253,7 +281,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                 throw new ArgumentNullException(nameof(apiResource));
             }
 
-            Entities.ApiResource updatedEntity = _mapper.ToEntity(apiResource);
+            TApiResourceEntity updatedEntity = Mapper.ToEntity<TApiResourceModel, TApiResourceEntity>(apiResource);
 
             if (!CheckRequiredFields(updatedEntity, out string errorMsg))
             {
@@ -261,8 +289,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
 
             string entityId = updatedEntity.Id;
-            Entities.ApiResource entityInSession = await _documentSession
-                .LoadAsync<Entities.ApiResource>(entityId, cancellationToken)
+            TApiResourceEntity entityInSession = await DocumentSession
+                .LoadAsync<TApiResourceEntity>(entityId, cancellationToken)
                 .ConfigureAwait(false);
 
             if (entityInSession is null)
@@ -270,20 +298,20 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                 return StoreResult.Failure(string.Format(ErrorDescriber.EntityNotFound, entityId));
             }
 
-            _mapper.Map(updatedEntity, entityInSession);
+            Mapper.Map(updatedEntity, entityInSession);
 
             try
             {
-                string changeVector = _documentSession.Advanced.GetChangeVectorFor(entityInSession);
-                await _documentSession
+                string changeVector = DocumentSession.Advanced.GetChangeVectorFor(entityInSession);
+                await DocumentSession
                     .StoreAsync(entityInSession, changeVector, entityInSession.Id, cancellationToken)
                     .ConfigureAwait(false);
-                await _documentSession.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                await DocumentSession.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                 return StoreResult.Success();
             }
             catch (ConcurrencyException concurrencyException)
             {
-                _logger.LogError(
+                Logger.LogError(
                     concurrencyException,
                     "Error updating api resource. Entity ID {1}",
                     entityId
@@ -292,7 +320,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
             catch (Exception ex)
             {
-                _logger.LogError(
+                Logger.LogError(
                     ex,
                     "Error updating api resource. Entity ID {1}",
                     entityId
@@ -301,7 +329,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
         }
 
-        public async Task<StoreResult> DeleteApiResourceAsync(
+        public virtual async Task<StoreResult> DeleteApiResourceAsync(
             string apiResourceName,
             CancellationToken cancellationToken = default)
         {
@@ -312,10 +340,10 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                 throw new ArgumentNullException(nameof(apiResourceName));
             }
 
-            string entityId = _mapper.CreateEntityId<Entities.ApiResource>(apiResourceName);
+            string entityId = Mapper.CreateEntityId<TApiResourceEntity>(apiResourceName);
 
-            Entities.ApiResource entityInSession = await _documentSession
-                .LoadAsync<Entities.ApiResource>(
+            TApiResourceEntity entityInSession = await DocumentSession
+                .LoadAsync<TApiResourceEntity>(
                     entityId,
                     cancellationToken)
                 .ConfigureAwait(false);
@@ -327,14 +355,14 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
 
             try
             {
-                string changeVector = _documentSession.Advanced.GetChangeVectorFor(entityInSession);
-                _documentSession.Delete(entityId, changeVector);
-                await _documentSession.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                string changeVector = DocumentSession.Advanced.GetChangeVectorFor(entityInSession);
+                DocumentSession.Delete(entityId, changeVector);
+                await DocumentSession.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                 return StoreResult.Success();
             }
             catch (ConcurrencyException concurrencyException)
             {
-                _logger.LogError(
+                Logger.LogError(
                     concurrencyException,
                     "Error deleting api resource. Entity ID {1}",
                     entityId
@@ -343,7 +371,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
             catch (Exception ex)
             {
-                _logger.LogError(
+                Logger.LogError(
                     ex,
                     "Error deleting api resource. Entity ID {1}",
                     entityId
@@ -352,7 +380,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
         }
 
-        public async Task<StoreResult> CreateApiScopeAsync(ApiScope apiScope,
+        public virtual async Task<StoreResult> CreateApiScopeAsync(
+            TApiScopeModel apiScope,
             CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -362,7 +391,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                 throw new ArgumentNullException(nameof(apiScope));
             }
 
-            Entities.ApiScope entity = _mapper.ToEntity(apiScope);
+            TApiScopeEntity entity = Mapper.ToEntity<TApiScopeModel, TApiScopeEntity>(apiScope);
 
             if (!CheckRequiredFields(entity, out string errorMsg))
             {
@@ -371,7 +400,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
 
             try
             {
-                await _documentSession
+                await DocumentSession
                     .StoreAsync(
                         entity,
                         string.Empty,
@@ -379,12 +408,12 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                         cancellationToken
                     )
                     .ConfigureAwait(false);
-                await _documentSession.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                await DocumentSession.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                 return StoreResult.Success();
             }
             catch (ConcurrencyException concurrencyException)
             {
-                _logger.LogError(
+                Logger.LogError(
                     concurrencyException,
                     "Error creating api scope. Scope name {0}; Entity ID {1}",
                     apiScope.Name,
@@ -394,7 +423,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
             catch (Exception ex)
             {
-                _logger.LogError(
+                Logger.LogError(
                     ex,
                     "Error creating api scope. Scope name {0}; Entity ID {1}",
                     apiScope.Name,
@@ -404,7 +433,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
         }
 
-        public async Task<StoreResult> UpdateApiScopeAsync(ApiScope apiScope,
+        public virtual async Task<StoreResult> UpdateApiScopeAsync(
+            TApiScopeModel apiScope,
             CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -414,7 +444,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                 throw new ArgumentNullException(nameof(apiScope));
             }
 
-            Entities.ApiScope updatedEntity = _mapper.ToEntity(apiScope);
+            TApiScopeEntity updatedEntity = Mapper.ToEntity<TApiScopeModel, TApiScopeEntity>(apiScope);
 
             if (!CheckRequiredFields(updatedEntity, out string errorMsg))
             {
@@ -422,8 +452,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
 
             string entityId = updatedEntity.Id;
-            Entities.ApiScope entityInSession = await _documentSession
-                .LoadAsync<Entities.ApiScope>(entityId, cancellationToken)
+            TApiScopeEntity entityInSession = await DocumentSession
+                .LoadAsync<TApiScopeEntity>(entityId, cancellationToken)
                 .ConfigureAwait(false);
 
             if (entityInSession is null)
@@ -431,20 +461,20 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                 return StoreResult.Failure(string.Format(ErrorDescriber.EntityNotFound, entityId));
             }
 
-            _mapper.Map(updatedEntity, entityInSession);
+            Mapper.Map(updatedEntity, entityInSession);
 
             try
             {
-                string changeVector = _documentSession.Advanced.GetChangeVectorFor(entityInSession);
-                await _documentSession
+                string changeVector = DocumentSession.Advanced.GetChangeVectorFor(entityInSession);
+                await DocumentSession
                     .StoreAsync(entityInSession, changeVector, entityInSession.Id, cancellationToken)
                     .ConfigureAwait(false);
-                await _documentSession.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                await DocumentSession.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                 return StoreResult.Success();
             }
             catch (ConcurrencyException concurrencyException)
             {
-                _logger.LogError(
+                Logger.LogError(
                     concurrencyException,
                     "Error updating api scope. Entity ID {1}",
                     entityId
@@ -453,7 +483,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
             catch (Exception ex)
             {
-                _logger.LogError(
+                Logger.LogError(
                     ex,
                     "Error updating api scope. Entity ID {1}",
                     entityId
@@ -462,7 +492,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
         }
 
-        public async Task<StoreResult> DeleteApiScopeAsync(string apiScopeName,
+        public virtual async Task<StoreResult> DeleteApiScopeAsync(
+            string apiScopeName,
             CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -472,10 +503,10 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                 throw new ArgumentNullException(nameof(apiScopeName));
             }
 
-            string entityId = _mapper.CreateEntityId<Entities.ApiScope>(apiScopeName);
+            string entityId = Mapper.CreateEntityId<TApiScopeEntity>(apiScopeName);
 
-            Entities.ApiScope entityInSession = await _documentSession
-                .LoadAsync<Entities.ApiScope>(
+            TApiScopeEntity entityInSession = await DocumentSession
+                .LoadAsync<TApiScopeEntity>(
                     entityId,
                     cancellationToken)
                 .ConfigureAwait(false);
@@ -487,14 +518,14 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
 
             try
             {
-                string changeVector = _documentSession.Advanced.GetChangeVectorFor(entityInSession);
-                _documentSession.Delete(entityId, changeVector);
-                await _documentSession.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                string changeVector = DocumentSession.Advanced.GetChangeVectorFor(entityInSession);
+                DocumentSession.Delete(entityId, changeVector);
+                await DocumentSession.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                 return StoreResult.Success();
             }
             catch (ConcurrencyException concurrencyException)
             {
-                _logger.LogError(
+                Logger.LogError(
                     concurrencyException,
                     "Error deleting api scope. Entity ID {1}",
                     entityId
@@ -503,7 +534,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
             catch (Exception ex)
             {
-                _logger.LogError(
+                Logger.LogError(
                     ex,
                     "Error deleting api scope. Entity ID {1}",
                     entityId
@@ -512,7 +543,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
         }
 
-        private static bool CheckRequiredFields(Entities.IdentityResource identityResource, out string errorMessage)
+        protected virtual bool CheckRequiredFields(TIdentityResourceEntity identityResource, out string errorMessage)
         {
             errorMessage = string.Empty;
 
@@ -531,7 +562,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             return true;
         }
 
-        private static bool CheckRequiredFields(Entities.ApiResource apiResource, out string errorMessage)
+        protected virtual bool CheckRequiredFields(TApiResourceEntity apiResource, out string errorMessage)
         {
             errorMessage = string.Empty;
 
@@ -550,7 +581,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             return true;
         }
 
-        private static bool CheckRequiredFields(Entities.ApiScope apiScope, out string errorMessage)
+        protected virtual bool CheckRequiredFields(TApiScopeEntity apiScope, out string errorMessage)
         {
             errorMessage = string.Empty;
 

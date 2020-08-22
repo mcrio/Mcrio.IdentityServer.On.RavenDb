@@ -1,6 +1,7 @@
 ﻿using System;
 using FluentAssertions;
 using IdentityServer4.Models;
+using Mcrio.IdentityServer.On.RavenDb.Storage.Mappers;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Mappers.Profiles;
 using Xunit;
 using Xunit.Abstractions;
@@ -19,7 +20,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Mapping
         [Fact]
         public void PersistedGrantAutomapperConfigurationIsValid()
         {
-            var mapper = InitializeServices().Mapper;
+            IIdentityServerStoreMapper mapper = InitializeServices().Mapper;
             mapper.AssertConfigurationIsValid<PersistedGrantMapperProfile>();
         }
 
@@ -31,15 +32,15 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Mapping
                 ConsumedTime = new System.DateTime(2020, 02, 03, 4, 5, 6),
             };
 
-            var mapper = InitializeServices().Mapper;
+            IIdentityServerStoreMapper mapper = InitializeServices().Mapper;
 
-            var mappedEntity = mapper.ToEntity(model);
+            Entities.PersistedGrant mappedEntity = mapper.ToEntity<PersistedGrant, Entities.PersistedGrant>(model);
             mappedEntity.Should().NotBeNull();
             mappedEntity.ConsumedTime.Should().NotBeNull();
-            mappedEntity.ConsumedTime.Value.Should().Be(new System.DateTime(2020, 02, 03, 4, 5, 6));
+            mappedEntity.ConsumedTime!.Value.Should().Be(new System.DateTime(2020, 02, 03, 4, 5, 6));
 
-            var mappedModel = mapper.ToModel(mappedEntity);
-            mappedModel.ConsumedTime.Value.Should().Be(new System.DateTime(2020, 02, 03, 4, 5, 6));
+            PersistedGrant mappedModel = mapper.ToModel<Entities.PersistedGrant, PersistedGrant>(mappedEntity);
+            mappedModel.ConsumedTime!.Value.Should().Be(new System.DateTime(2020, 02, 03, 4, 5, 6));
 
             Assert.NotNull(mappedModel);
             Assert.NotNull(mappedEntity);
@@ -61,7 +62,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Mapping
                 SubjectId = "test 22222",
             };
 
-            var mapper = InitializeServices().Mapper;
+            IIdentityServerStoreMapper mapper = InitializeServices().Mapper;
 
             entity1.Should().NotBeEquivalentTo(entity2);
             mapper.Map(entity1, entity2);
@@ -78,9 +79,9 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Mapping
                 Key = "test-name",
             };
 
-            var mapper = InitializeServices().Mapper;
+            IIdentityServerStoreMapper mapper = InitializeServices().Mapper;
 
-            RavenDb.Storage.Entities.PersistedGrant entity = mapper.ToEntity(model);
+            Entities.PersistedGrant entity = mapper.ToEntity<PersistedGrant, Entities.PersistedGrant>(model);
             _output.WriteLine(entity.Id);
             entity.Id.Should().NotBeEmpty();
             entity.Id.Should().EndWith("test-name");

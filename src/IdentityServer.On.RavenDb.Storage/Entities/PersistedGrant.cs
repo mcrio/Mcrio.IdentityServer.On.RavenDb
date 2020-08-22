@@ -2,7 +2,7 @@ using System;
 
 namespace Mcrio.IdentityServer.On.RavenDb.Storage.Entities
 {
-    public class PersistedGrant
+    public class PersistedGrant : IEntity
     {
         public string Id { get; set; }
         public string Key { get; set; }

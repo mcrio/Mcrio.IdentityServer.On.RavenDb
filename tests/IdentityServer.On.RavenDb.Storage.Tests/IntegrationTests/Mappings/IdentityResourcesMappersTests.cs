@@ -1,6 +1,7 @@
 ﻿using System;
 using FluentAssertions;
 using IdentityServer4.Models;
+using Mcrio.IdentityServer.On.RavenDb.Storage.Mappers;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Mappers.Profiles;
 using Xunit;
 using Xunit.Abstractions;
@@ -19,18 +20,19 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Mapping
         [Fact]
         public void IdentityResourceAutomapperConfigurationIsValid()
         {
-            var mapper = InitializeServices().Mapper;
+            IIdentityServerStoreMapper mapper = InitializeServices().Mapper;
             mapper.AssertConfigurationIsValid<IdentityResourceMapperProfile>();
         }
 
         [Fact]
         public void CanMapIdentityResources()
         {
-            var mapper = InitializeServices().Mapper;
+            IIdentityServerStoreMapper mapper = InitializeServices().Mapper;
 
             var model = new IdentityResource();
-            var mappedEntity = mapper.ToEntity(model);
-            var mappedModel = mapper.ToModel(mappedEntity);
+            Entities.IdentityResource mappedEntity =
+                mapper.ToEntity<IdentityResource, Entities.IdentityResource>(model);
+            IdentityResource mappedModel = mapper.ToModel<Entities.IdentityResource, IdentityResource>(mappedEntity);
 
             Assert.NotNull(mappedModel);
             Assert.NotNull(mappedEntity);
@@ -55,7 +57,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Mapping
                 Created = created,
             };
 
-            var mapper = InitializeServices().Mapper;
+            IIdentityServerStoreMapper mapper = InitializeServices().Mapper;
 
             entity1.Should().NotBeEquivalentTo(entity2);
             mapper.Map(entity1, entity2);
@@ -72,9 +74,9 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Mapping
                 Name = "test-name",
             };
 
-            var mapper = InitializeServices().Mapper;
+            IIdentityServerStoreMapper mapper = InitializeServices().Mapper;
 
-            RavenDb.Storage.Entities.IdentityResource entity = mapper.ToEntity(model);
+            Entities.IdentityResource entity = mapper.ToEntity<IdentityResource, Entities.IdentityResource>(model);
             _output.WriteLine(entity.Id);
             entity.Id.Should().NotBeEmpty();
             entity.Id.Should().EndWith("test-name");

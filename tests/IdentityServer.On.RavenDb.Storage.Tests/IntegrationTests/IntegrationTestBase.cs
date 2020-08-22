@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using FluentAssertions;
+using IdentityServer4.Models;
 using IdentityServer4.Services;
 using IdentityServer4.Stores;
 using IdentityServer4.Stores.Serialization;
@@ -67,10 +68,13 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests
             serviceCollection.AddHostedService<TokenCleanupBackgroundService>();
 
             // Identity Server configuration services
-            serviceCollection.TryAddScoped<IClientStore, ClientStore>();
-            serviceCollection.TryAddScoped<IResourceStore, ResourceStore>();
-            serviceCollection.TryAddScoped<ICorsPolicyService, CorsPolicyService>();
-            serviceCollection.IdentityServerAddConfigurationStoreAdditions();
+            serviceCollection.TryAddTransient<IClientStore, ClientStore>();
+            serviceCollection.TryAddTransient<IResourceStore, ResourceStore>();
+            serviceCollection.TryAddTransient<ICorsPolicyService, CorsPolicyService>();
+
+            serviceCollection.TryAddTransient<IClientStoreAdditions<Client>, ClientStoreAdditions>();
+            serviceCollection.TryAddTransient<IResourceStoreAdditions<IdentityResource, ApiResource, ApiScope>,
+                ResourceStoreAdditions>();
 
             // Identity server other services required for tests
             serviceCollection.TryAddSingleton<IPersistentGrantSerializer, PersistentGrantSerializer>();
@@ -87,8 +91,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests
                 serviceProvider.GetRequiredService<IAsyncDocumentSession>(),
                 serviceProvider.GetRequiredService<ICorsPolicyService>(),
                 serviceProvider.GetRequiredService<ITokenCleanupService>(),
-                serviceProvider.GetRequiredService<IClientStoreAdditions>(),
-                serviceProvider.GetRequiredService<IResourceStoreAdditions>()
+                serviceProvider.GetRequiredService<IClientStoreAdditions<Client>>(),
+                serviceProvider.GetRequiredService<IResourceStoreAdditions<IdentityResource, ApiResource, ApiScope>>()
             );
         }
 

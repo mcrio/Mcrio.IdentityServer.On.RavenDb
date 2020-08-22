@@ -1,6 +1,7 @@
 ﻿using System;
 using FluentAssertions;
 using IdentityServer4.Models;
+using Mcrio.IdentityServer.On.RavenDb.Storage.Mappers;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Mappers.Profiles;
 using Xunit;
 using Xunit.Abstractions;
@@ -19,18 +20,18 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Mapping
         [Fact]
         public void ScopeAutomapperConfigurationIsValid()
         {
-            var mapper = InitializeServices().Mapper;
+            IIdentityServerStoreMapper mapper = InitializeServices().Mapper;
             mapper.AssertConfigurationIsValid<ScopeMapperProfile>();
         }
 
         [Fact]
         public void CanMapScope()
         {
-            var mapper = InitializeServices().Mapper;
+            IIdentityServerStoreMapper mapper = InitializeServices().Mapper;
 
             var model = new ApiScope();
-            var mappedEntity = mapper.ToEntity(model);
-            var mappedModel = mapper.ToModel(mappedEntity);
+            Entities.ApiScope mappedEntity = mapper.ToEntity<ApiScope, Entities.ApiScope>(model);
+            ApiScope mappedModel = mapper.ToModel<Entities.ApiScope, ApiScope>(mappedEntity);
 
             Assert.NotNull(mappedModel);
             Assert.NotNull(mappedEntity);
@@ -39,7 +40,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Mapping
         [Fact]
         public void Properties_Map()
         {
-            var model = new ApiScope()
+            var model = new ApiScope
             {
                 Description = "description",
                 DisplayName = "displayname",
@@ -50,12 +51,12 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Mapping
                     { "x", "xx" },
                     { "y", "yy" },
                 },
-                Enabled = false
+                Enabled = false,
             };
 
-            var mapper = InitializeServices().Mapper;
+            IIdentityServerStoreMapper mapper = InitializeServices().Mapper;
 
-            var mappedEntity = mapper.ToEntity(model);
+            Entities.ApiScope mappedEntity = mapper.ToEntity<ApiScope, Entities.ApiScope>(model);
             mappedEntity.Description.Should().Be("description");
             mappedEntity.DisplayName.Should().Be("displayname");
             mappedEntity.Name.Should().Be("foo");
@@ -66,8 +67,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Mapping
             mappedEntity.Properties.Should().Contain("x", "xx");
             mappedEntity.Properties.Should().Contain("y", "yy");
 
-
-            var mappedModel = mapper.ToModel(mappedEntity);
+            ApiScope mappedModel = mapper.ToModel<Entities.ApiScope, ApiScope>(mappedEntity);
 
             mappedModel.Description.Should().Be("description");
             mappedModel.DisplayName.Should().Be("displayname");
@@ -97,7 +97,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Mapping
                 Name = "test 22222",
             };
 
-            var mapper = InitializeServices().Mapper;
+            IIdentityServerStoreMapper mapper = InitializeServices().Mapper;
 
             entity1.Should().NotBeEquivalentTo(entity2);
             mapper.Map(entity1, entity2);
@@ -114,9 +114,9 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Mapping
                 Name = "test-name",
             };
 
-            var mapper = InitializeServices().Mapper;
+            IIdentityServerStoreMapper mapper = InitializeServices().Mapper;
 
-            RavenDb.Storage.Entities.ApiScope entity = mapper.ToEntity(model);
+            Entities.ApiScope entity = mapper.ToEntity<ApiScope, Entities.ApiScope>(model);
             _output.WriteLine(entity.Id);
             entity.Id.Should().NotBeEmpty();
             entity.Id.Should().EndWith("test-name");

@@ -1,9 +1,12 @@
 using System;
+using IdentityServer4.Models;
 using Mcrio.IdentityServer.On.RavenDb.Storage;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Cors;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Stores;
+using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Additions;
 using Mcrio.IdentityServer.On.RavenDb.Storage.TokenCleanup;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Mcrio.IdentityServer.On.RavenDb
 {
@@ -24,15 +27,69 @@ namespace Mcrio.IdentityServer.On.RavenDb
             bool addConfigurationStoreCache = true,
             bool addOperationalStore = true)
         {
+            return AddRavenDbStores<ClientStore, ResourceStore, CorsPolicyService,
+                ClientStoreAdditions, ResourceStoreAdditions, PersistedGrantStore, DeviceFlowStore,
+                TokenCleanupService, TokenCleanupBackgroundService, Client, Storage.Entities.Client,
+                IdentityResource, Storage.Entities.IdentityResource, ApiResource, Storage.Entities.ApiResource,
+                ApiScope, Storage.Entities.ApiScope, Storage.Entities.PersistedGrant, Storage.Entities.DeviceFlowCode>(
+                builder,
+                documentSessionProvider,
+                operationalStoreOptions,
+                addConfigurationStore,
+                addConfigurationStoreCache,
+                addOperationalStore
+            );
+        }
+
+        /// <summary>
+        /// Configures IdentityServer with the RavenDB implementation of configuration and operational stores.
+        /// </summary>
+        /// <returns>Identity server builder.</returns>
+        public static IIdentityServerBuilder AddRavenDbStores<TClientStore, TResourceStore, TCorsPolicyService,
+            TClientStoreAdditions, TResourceStoreAdditions, TPersistedGrantStore, TDeviceFlowStore,
+            TTokenCleanupService, TTokenCleanupBackgroundService, TClient, TClientEntity,
+            TIdentityResource, TIdentityResourceEntity, TApiResource, TApiResourceEntity,
+            TApiScope, TApiScopeEntity, TPersistedGrantEntity, TDeviceFlowCode>(
+            this IIdentityServerBuilder builder,
+            Func<IServiceProvider, IdentityServerDocumentSessionProvider> documentSessionProvider,
+            Action<OperationalStoreOptions>? operationalStoreOptions = null,
+            bool addConfigurationStore = true,
+            bool addConfigurationStoreCache = true,
+            bool addOperationalStore = true)
+            where TClientStore : ClientStore<TClientEntity>
+            where TResourceStore : ResourceStore<TIdentityResourceEntity, TApiResourceEntity, TApiScopeEntity>
+            where TCorsPolicyService : CorsPolicyService<TClientEntity>
+            where TClientStoreAdditions : ClientStoreAdditions<TClient, TClientEntity>
+            where TResourceStoreAdditions : ResourceStoreAdditions<TIdentityResource, TIdentityResourceEntity,
+                TApiResource, TApiResourceEntity, TApiScope, TApiScopeEntity>
+            where TPersistedGrantStore : PersistedGrantStore<TPersistedGrantEntity>
+            where TDeviceFlowStore : DeviceFlowStore<TDeviceFlowCode>
+            where TTokenCleanupService : TokenCleanupService
+            where TTokenCleanupBackgroundService : TokenCleanupBackgroundService
+            where TClient : Client
+            where TClientEntity : Storage.Entities.Client
+            where TIdentityResource : IdentityResource
+            where TIdentityResourceEntity : Storage.Entities.IdentityResource
+            where TApiResource : ApiResource
+            where TApiResourceEntity : Storage.Entities.ApiResource
+            where TApiScope : ApiScope
+            where TApiScopeEntity : Storage.Entities.ApiScope
+            where TPersistedGrantEntity : Storage.Entities.PersistedGrant
+            where TDeviceFlowCode : Storage.Entities.DeviceFlowCode, new()
+        {
             builder.Services.IdentityServerAddRavenDbServices(documentSessionProvider);
 
             if (addConfigurationStore)
             {
-                builder.AddClientStore<ClientStore>();
-                builder.AddResourceStore<ResourceStore>();
-                builder.AddCorsPolicyService<CorsPolicyService>();
+                builder.AddClientStore<TClientStore>();
+                builder.AddResourceStore<TResourceStore>();
+                builder.AddCorsPolicyService<TCorsPolicyService>();
 
-                builder.Services.IdentityServerAddConfigurationStoreAdditions();
+                builder.Services.TryAddTransient<IClientStoreAdditions<TClient>, TClientStoreAdditions>();
+                builder.Services.TryAddTransient<
+                    IResourceStoreAdditions<TIdentityResource, TApiResource, TApiScope>,
+                    TResourceStoreAdditions
+                >();
             }
 
             if (addConfigurationStoreCache)
@@ -40,9 +97,9 @@ namespace Mcrio.IdentityServer.On.RavenDb
                 builder.AddInMemoryCaching();
 
                 // add the caching decorators
-                builder.AddClientStoreCache<ClientStore>();
-                builder.AddResourceStoreCache<ResourceStore>();
-                builder.AddCorsPolicyCache<CorsPolicyService>();
+                builder.AddClientStoreCache<TClientStore>();
+                builder.AddResourceStoreCache<TResourceStore>();
+                builder.AddCorsPolicyCache<TCorsPolicyService>();
             }
 
             if (addOperationalStore)
@@ -52,11 +109,11 @@ namespace Mcrio.IdentityServer.On.RavenDb
                     operationalStoreOptions?.Invoke(options);
                 });
 
-                builder.AddPersistedGrantStore<PersistedGrantStore>();
-                builder.AddDeviceFlowStore<DeviceFlowStore>();
+                builder.AddPersistedGrantStore<TPersistedGrantStore>();
+                builder.AddDeviceFlowStore<TDeviceFlowStore>();
 
-                builder.Services.AddTransient<ITokenCleanupService, TokenCleanupService>();
-                builder.Services.AddHostedService<TokenCleanupBackgroundService>();
+                builder.Services.AddTransient<ITokenCleanupService, TTokenCleanupService>();
+                builder.Services.AddHostedService<TTokenCleanupBackgroundService>();
             }
 
             return builder;

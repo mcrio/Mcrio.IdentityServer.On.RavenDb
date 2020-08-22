@@ -49,6 +49,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
                 RedirectUris = { "https://localhost:5021/signin-oidc" },
                 RequireConsent = false,
                 AllowOfflineAccess = true,
+                AccessTokenLifetime = 5 * 60, // 5min
             },
         };
     }

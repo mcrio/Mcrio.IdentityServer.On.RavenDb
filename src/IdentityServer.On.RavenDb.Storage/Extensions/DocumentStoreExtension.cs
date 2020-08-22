@@ -7,8 +7,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Extensions
     {
         internal static string GetCollectionPrefix(this IDocumentStore documentStore, Type entityType)
         {
-            var collectionName = documentStore.Conventions.GetCollectionName(entityType);
-            var prefix = documentStore
+            string collectionName = documentStore.Conventions.GetCollectionName(entityType);
+            string prefix = documentStore
                 .Conventions
                 .TransformTypeCollectionNameToDocumentIdPrefix(collectionName);
             return prefix;
@@ -16,8 +16,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Extensions
 
         internal static string GetCollectionPrefixWithSeparator(this IDocumentStore documentStore, Type entityType)
         {
-            var prefix = GetCollectionPrefix(documentStore, entityType);
-            var separator = documentStore
+            string prefix = GetCollectionPrefix(documentStore, entityType);
+            string separator = documentStore
                 .Conventions
                 .IdentityPartsSeparator;
             return $"{prefix}{separator}";

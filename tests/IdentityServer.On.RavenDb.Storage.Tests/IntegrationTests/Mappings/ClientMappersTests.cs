@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Entities;
+using Mcrio.IdentityServer.On.RavenDb.Storage.Mappers;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Mappers.Profiles;
 using Xunit;
 using Xunit.Abstractions;
@@ -19,21 +20,22 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Mapping
         {
             _output = output;
         }
+
         [Fact]
         public void AutomapperConfigurationIsValid()
         {
-            var mapper = InitializeServices().Mapper;
+            IIdentityServerStoreMapper mapper = InitializeServices().Mapper;
             mapper.AssertConfigurationIsValid<ClientMapperProfile>();
         }
 
         [Fact]
         public void Can_Map()
         {
-            var mapper = InitializeServices().Mapper;
+            IIdentityServerStoreMapper mapper = InitializeServices().Mapper;
 
             var model = new Client();
-            var mappedEntity = mapper.ToEntity(model);
-            var mappedModel = mapper.ToModel(mappedEntity);
+            Entities.Client mappedEntity = mapper.ToEntity<Client, Entities.Client>(model);
+            Client mappedModel = mapper.ToModel<Entities.Client, Client>(mappedEntity);
 
             Assert.NotNull(mappedModel);
             Assert.NotNull(mappedEntity);
@@ -42,29 +44,34 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Mapping
         [Fact]
         public void Properties_Map()
         {
-            var model = new Client()
+            var model = new Client
             {
                 Properties =
                 {
                     { "foo1", "bar1" },
                     { "foo2", "bar2" },
-                }
+                },
             };
 
-            var mapper = InitializeServices().Mapper;
+            IIdentityServerStoreMapper mapper = InitializeServices().Mapper;
 
-            var mappedEntity = mapper.ToEntity(model);
+            Entities.Client mappedEntity = mapper.ToEntity<Client, Entities.Client>(model);
 
             mappedEntity.Properties.Count.Should().Be(2);
-            var foo1 = mappedEntity.Properties.FirstOrDefault(x => x.Key == "foo1");
+
+            KeyValuePair<string, string> foo1 = mappedEntity
+                .Properties
+                .FirstOrDefault(x => x.Key == "foo1");
             foo1.Should().NotBeNull();
             foo1.Value.Should().Be("bar1");
-            var foo2 = mappedEntity.Properties.FirstOrDefault(x => x.Key == "foo2");
+
+            KeyValuePair<string, string> foo2 = mappedEntity
+                .Properties
+                .FirstOrDefault(x => x.Key == "foo2");
             foo2.Should().NotBeNull();
             foo2.Value.Should().Be("bar2");
 
-
-            var mappedModel = mapper.ToModel(mappedEntity);
+            Client mappedModel = mapper.ToModel<Entities.Client, Client>(mappedEntity);
 
             mappedModel.Properties.Count.Should().Be(2);
             mappedModel.Properties.ContainsKey("foo1").Should().BeTrue();
@@ -83,11 +90,11 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Mapping
                     Properties = new Dictionary<string, string>()
                     {
                         { "foo1", "bar1" },
-                        { "foo1", "bar2" }
-                    }
+                        { "foo1", "bar2" },
+                    },
                 };
-                var mapper = InitializeServices().Mapper;
-                mapper.ToModel(entity);
+                IIdentityServerStoreMapper mapper = InitializeServices().Mapper;
+                mapper.ToModel<Entities.Client, Client>(entity);
             };
             modelAction.Should().Throw<Exception>();
         }
@@ -95,14 +102,12 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Mapping
         [Fact]
         public void missing_values_should_use_defaults()
         {
-            var entity = new RavenDb.Storage.Entities.Client
+            var entity = new Entities.Client
             {
                 ClientSecrets = new List<ClientSecret>
                 {
-                    new ClientSecret
-                    {
-                    }
-                }
+                    new ClientSecret(),
+                },
             };
 
             var def = new Client
@@ -110,9 +115,9 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Mapping
                 ClientSecrets = { new Secret("foo") },
             };
 
-            var mapper = InitializeServices().Mapper;
+            IIdentityServerStoreMapper mapper = InitializeServices().Mapper;
 
-            var model = mapper.ToModel(entity);
+            Client model = mapper.ToModel<Entities.Client, Client>(entity);
             model.ProtocolType.Should().Be(def.ProtocolType);
             model.ClientSecrets.First().Type.Should().Be(def.ClientSecrets.First().Type);
         }
@@ -122,7 +127,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Mapping
         {
             var id = Guid.NewGuid().ToString();
             DateTime created = DateTime.UtcNow;
-            var entity1 = new RavenDb.Storage.Entities.Client
+            var entity1 = new Entities.Client
             {
                 Id = id,
                 ClientName = "test",
@@ -138,7 +143,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Mapping
                 Claims = new List<ClientClaim>(),
             };
 
-            var mapper = InitializeServices().Mapper;
+            IIdentityServerStoreMapper mapper = InitializeServices().Mapper;
 
             entity1.Should().NotBeEquivalentTo(entity2);
             mapper.Map(entity1, entity2);
@@ -155,9 +160,9 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Mapping
                 ClientId = "test-client",
             };
 
-            var mapper = InitializeServices().Mapper;
+            IIdentityServerStoreMapper mapper = InitializeServices().Mapper;
 
-            RavenDb.Storage.Entities.Client entity = mapper.ToEntity(model);
+            Entities.Client entity = mapper.ToEntity<Client, Entities.Client>(model);
             _output.WriteLine(entity.Id);
             entity.Id.Should().NotBeEmpty();
             entity.Id.Should().EndWith("test-client");

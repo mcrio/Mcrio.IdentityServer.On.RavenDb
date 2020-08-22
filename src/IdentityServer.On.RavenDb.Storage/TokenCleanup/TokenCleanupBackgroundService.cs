@@ -41,25 +41,26 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.TokenCleanup
         /// <returns>The <see cref="Task"/> that represents the asynchronous operation.</returns>
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogDebug("TokenCleanupBackgroundService service is starting...");
+            _logger.LogInformation("TokenCleanupBackgroundService service is starting...");
 
-            if (!_operationalStoreOptions.Value.TokenCleanup.EnableTokenCleanupBackgroundService)
+            OperationalStoreOptions.TokenCleanupOptions cleanupOptions = _operationalStoreOptions.Value.TokenCleanup;
+
+            if (!cleanupOptions.EnableTokenCleanupBackgroundService)
             {
-                _logger.LogDebug("TokenCleanupBackgroundService is disabled.");
+                _logger.LogInformation("TokenCleanupBackgroundService is disabled.");
                 return;
             }
 
             try
             {
-                if (!stoppingToken.IsCancellationRequested &&
-                    _operationalStoreOptions.Value.TokenCleanup.CleanupStartupDelaySec > 0)
+                if (!stoppingToken.IsCancellationRequested && cleanupOptions.CleanupStartupDelaySec > 0)
                 {
-                    _logger.LogDebug(
+                    _logger.LogInformation(
                         "TokenCleanupBackgroundService executing startup delay for {} seconds.",
-                        _operationalStoreOptions.Value.TokenCleanup.CleanupStartupDelaySec
+                        cleanupOptions.CleanupStartupDelaySec
                     );
                     await Task.Delay(
-                        TimeSpan.FromSeconds(_operationalStoreOptions.Value.TokenCleanup.CleanupStartupDelaySec),
+                        TimeSpan.FromSeconds(cleanupOptions.CleanupStartupDelaySec),
                         stoppingToken
                     );
                 }
@@ -72,7 +73,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.TokenCleanup
                         .ConfigureAwait(false);
 
                     await Task
-                        .Delay(TimeSpan.FromSeconds(_operationalStoreOptions.Value.TokenCleanup.CleanupIntervalSec), stoppingToken)
+                        .Delay(TimeSpan.FromSeconds(cleanupOptions.CleanupIntervalSec), stoppingToken)
                         .ConfigureAwait(false);
                 }
             }
@@ -82,7 +83,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.TokenCleanup
             }
             finally
             {
-                _logger.LogDebug("TokenCleanupBackgroundService service is stopping.");
+                _logger.LogInformation("TokenCleanupBackgroundService service is stopping.");
             }
         }
 

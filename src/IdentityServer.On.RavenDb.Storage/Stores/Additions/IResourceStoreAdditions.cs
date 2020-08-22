@@ -4,15 +4,18 @@ using IdentityServer4.Models;
 
 namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Additions
 {
-    public interface IResourceStoreAdditions
+    public interface IResourceStoreAdditions<TIdentityResourceModel, TApiResourceModel, TApiScopeModel>
+        where TIdentityResourceModel : IdentityResource
+        where TApiResourceModel : ApiResource
+        where TApiScopeModel : ApiScope
     {
         public Task<StoreResult> CreateIdentityResourceAsync(
-            IdentityResource identityResource,
+            TIdentityResourceModel identityResource,
             CancellationToken cancellationToken = default
         );
 
         public Task<StoreResult> UpdateIdentityResourceAsync(
-            IdentityResource identityResource,
+            TIdentityResourceModel identityResource,
             CancellationToken cancellationToken = default
         );
 
@@ -22,12 +25,12 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Additions
         );
 
         public Task<StoreResult> CreateApiResourceAsync(
-            ApiResource apiResource,
+            TApiResourceModel apiResource,
             CancellationToken cancellationToken = default
         );
 
         public Task<StoreResult> UpdateApiResourceAsync(
-            ApiResource apiResource,
+            TApiResourceModel apiResource,
             CancellationToken cancellationToken = default
         );
 
@@ -37,12 +40,12 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Additions
         );
 
         public Task<StoreResult> CreateApiScopeAsync(
-            ApiScope apiScope,
+            TApiScopeModel apiScope,
             CancellationToken cancellationToken = default
         );
 
         public Task<StoreResult> UpdateApiScopeAsync(
-            ApiScope apiScope,
+            TApiScopeModel apiScope,
             CancellationToken cancellationToken = default
         );
 

@@ -10,6 +10,7 @@ using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Raven.Client.Documents;
+using Raven.Client.Documents.Commands;
 using Raven.Client.Documents.Linq;
 using Raven.Client.Documents.Operations;
 using Raven.Client.Documents.Session;
@@ -17,42 +18,59 @@ using Raven.Client.Exceptions;
 
 namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
 {
-    public class PersistedGrantStore : IPersistedGrantStore
+    public class PersistedGrantStore : PersistedGrantStore<Entities.PersistedGrant>
     {
-        private readonly IAsyncDocumentSession _documentSession;
-        private readonly IIdentityServerStoreMapper _mapper;
-        private readonly ILogger<PersistedGrantStore> _logger;
-        private readonly IOptionsSnapshot<OperationalStoreOptions> _operationalStoreOptions;
-
         public PersistedGrantStore(
             IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             IIdentityServerStoreMapper mapper,
-            ILogger<PersistedGrantStore> logger,
+            ILogger<PersistedGrantStore<Entities.PersistedGrant>> logger,
+            IOptionsSnapshot<OperationalStoreOptions> operationalStoreOptions)
+            : base(identityServerDocumentSessionProvider, mapper, logger, operationalStoreOptions)
+        {
+        }
+    }
+
+    public abstract class PersistedGrantStore<TPersistedGrantEntity> : IPersistedGrantStore
+        where TPersistedGrantEntity : Entities.PersistedGrant
+    {
+        protected PersistedGrantStore(
+            IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
+            IIdentityServerStoreMapper mapper,
+            ILogger<PersistedGrantStore<TPersistedGrantEntity>> logger,
             IOptionsSnapshot<OperationalStoreOptions> operationalStoreOptions)
         {
-            _documentSession = identityServerDocumentSessionProvider();
-            _mapper = mapper;
-            _logger = logger;
-            _operationalStoreOptions = operationalStoreOptions;
+            DocumentSession = identityServerDocumentSessionProvider();
+            Mapper = mapper;
+            Logger = logger;
+            OperationalStoreOptions = operationalStoreOptions;
         }
 
-        public async Task StoreAsync(PersistedGrant grant)
+        protected IAsyncDocumentSession DocumentSession { get; }
+
+        protected IIdentityServerStoreMapper Mapper { get; }
+
+        protected ILogger<PersistedGrantStore<TPersistedGrantEntity>> Logger { get; }
+
+        protected IOptionsSnapshot<OperationalStoreOptions> OperationalStoreOptions { get; }
+
+        public virtual async Task StoreAsync(PersistedGrant grant)
         {
             if (grant == null)
             {
                 throw new ArgumentNullException(nameof(grant));
             }
 
-            Entities.PersistedGrant grantEntity = _mapper.ToEntity(grant);
+            TPersistedGrantEntity grantEntity =
+                Mapper.ToEntity<PersistedGrant, TPersistedGrantEntity>(grant);
             if (!CheckRequiredFields(grantEntity, out string errorMsg))
             {
-                _logger.LogError($"Error storing persisted grant because of required fields check failure: {errorMsg}");
+                Logger.LogError($"Error storing persisted grant because of required fields check failure: {errorMsg}");
                 return;
             }
 
             string entityId = grantEntity.Id;
-            Entities.PersistedGrant entityInSession = await _documentSession
-                .LoadAsync<Entities.PersistedGrant>(entityId)
+            TPersistedGrantEntity entityInSession = await DocumentSession
+                .LoadAsync<TPersistedGrantEntity>(entityId)
                 .ConfigureAwait(false);
 
             StoreResult operationResult;
@@ -67,60 +85,67 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
 
             if (operationResult.IsFailure)
             {
-                _logger.LogError($"Error storing persisted grant with error: {operationResult.Error}");
+                Logger.LogError($"Error storing persisted grant with error: {operationResult.Error}");
             }
         }
 
-        public async Task<PersistedGrant> GetAsync(string key)
+        public virtual async Task<PersistedGrant> GetAsync(string key)
         {
             if (string.IsNullOrWhiteSpace(key))
             {
                 throw new ArgumentNullException(nameof(key));
             }
 
-            string entityId = _mapper.CreateEntityId<Entities.PersistedGrant>(key);
-            Entities.PersistedGrant entity = await _documentSession
-                .LoadAsync<Entities.PersistedGrant>(entityId)
+            string entityId = Mapper.CreateEntityId<TPersistedGrantEntity>(key);
+            TPersistedGrantEntity entity = await DocumentSession
+                .LoadAsync<TPersistedGrantEntity>(entityId)
                 .ConfigureAwait(false);
 
-            return entity is null ? null! : _mapper.ToModel(entity);
+            return entity is null
+                ? null!
+                : Mapper.ToModel<TPersistedGrantEntity, PersistedGrant>(entity);
         }
 
-        public async Task<IEnumerable<PersistedGrant>> GetAllAsync(PersistedGrantFilter filter)
+        public virtual async Task<IEnumerable<PersistedGrant>> GetAllAsync(
+            PersistedGrantFilter filter)
         {
             filter.Validate();
 
-            IRavenQueryable<Entities.PersistedGrant> query = _documentSession.Query<Entities.PersistedGrant>();
+            IRavenQueryable<TPersistedGrantEntity> query = DocumentSession.Query<TPersistedGrantEntity>();
             query = ApplyFilter(query, filter);
 
             var grants = new List<PersistedGrant>();
 
-            var grantStreamResult = await _documentSession.Advanced.StreamAsync(query).ConfigureAwait(false);
+            Raven.Client.Util.IAsyncEnumerator<StreamResult<TPersistedGrantEntity>>? grantStreamResult =
+                await DocumentSession.Advanced
+                    .StreamAsync(query)
+                    .ConfigureAwait(false);
             while (await grantStreamResult.MoveNextAsync().ConfigureAwait(false))
             {
-                grants.Add(_mapper.ToModel(grantStreamResult.Current.Document));
+                grants.Add(Mapper.ToModel<TPersistedGrantEntity, PersistedGrant>(
+                    grantStreamResult.Current.Document));
             }
 
             return grants;
         }
 
         /// <inheritdoc />
-        public async Task RemoveAsync(string key)
+        public virtual async Task RemoveAsync(string key)
         {
             if (string.IsNullOrWhiteSpace(key))
             {
                 throw new ArgumentNullException(nameof(key));
             }
 
-            string entityId = _mapper.CreateEntityId<Entities.PersistedGrant>(key);
+            string entityId = Mapper.CreateEntityId<TPersistedGrantEntity>(key);
 
-            Entities.PersistedGrant entityInSession = await _documentSession
-                .LoadAsync<Entities.PersistedGrant>(entityId)
+            TPersistedGrantEntity entityInSession = await DocumentSession
+                .LoadAsync<TPersistedGrantEntity>(entityId)
                 .ConfigureAwait(false);
 
             if (entityInSession is null)
             {
-                _logger.LogWarning(
+                Logger.LogWarning(
                     "Error removing persisted token. {}",
                     string.Format(ErrorDescriber.EntityNotFound, entityId)
                 );
@@ -128,13 +153,13 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
 
             try
             {
-                string changeVector = _documentSession.Advanced.GetChangeVectorFor(entityInSession);
-                _documentSession.Delete(entityId, changeVector);
-                await _documentSession.SaveChangesAsync().ConfigureAwait(false);
+                string changeVector = DocumentSession.Advanced.GetChangeVectorFor(entityInSession);
+                DocumentSession.Delete(entityId, changeVector);
+                await DocumentSession.SaveChangesAsync().ConfigureAwait(false);
             }
             catch (ConcurrencyException concurrencyException)
             {
-                _logger.LogError(
+                Logger.LogError(
                     concurrencyException,
                     "Error deleting persisted grant {}. {}.",
                     entityId,
@@ -143,7 +168,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
             catch (Exception ex)
             {
-                _logger.LogError(
+                Logger.LogError(
                     ex,
                     "Error deleting persisted grant {}. {}.",
                     entityId,
@@ -153,32 +178,32 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
         }
 
         /// <inheritdoc/>
-        public async Task RemoveAllAsync(PersistedGrantFilter filter)
+        public virtual async Task RemoveAllAsync(PersistedGrantFilter filter)
         {
             filter.Validate();
 
-            IRavenQueryable<Entities.PersistedGrant> query = _documentSession.Query<Entities.PersistedGrant>();
+            IRavenQueryable<TPersistedGrantEntity> query = DocumentSession.Query<TPersistedGrantEntity>();
             query = ApplyFilter(query, filter);
 
             const int deleteOperationTimeoutSec = 30;
             try
             {
                 // todo: do we need to throttle this operation?
-                Operation operation = await _documentSession.Advanced.DocumentStore.Operations.SendAsync(
+                Operation operation = await DocumentSession.Advanced.DocumentStore.Operations.SendAsync(
                     new DeleteByQueryOperation(query.ToAsyncDocumentQuery().GetIndexQuery())
                 ).ConfigureAwait(false);
                 await operation.WaitForCompletionAsync(TimeSpan.FromSeconds(deleteOperationTimeoutSec));
             }
             catch (TimeoutException)
             {
-                _logger.LogWarning(
+                Logger.LogWarning(
                     "Remove all persisted grants operation took more than {} seconds.",
                     deleteOperationTimeoutSec
                 );
             }
         }
 
-        protected virtual bool CheckRequiredFields(Entities.PersistedGrant persistedGrant, out string errorMessage)
+        protected virtual bool CheckRequiredFields(TPersistedGrantEntity persistedGrant, out string errorMessage)
         {
             errorMessage = string.Empty;
 
@@ -221,22 +246,22 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             return true;
         }
 
-        protected virtual async Task<StoreResult> CreateAsync(Entities.PersistedGrant entity)
+        protected virtual async Task<StoreResult> CreateAsync(TPersistedGrantEntity entity)
         {
             try
             {
-                await _documentSession.StoreAsync(entity, string.Empty, entity.Id).ConfigureAwait(false);
-                _documentSession.ManageDocumentExpiresMetadata(
-                    _operationalStoreOptions.Value,
+                await DocumentSession.StoreAsync(entity, string.Empty, entity.Id).ConfigureAwait(false);
+                DocumentSession.ManageDocumentExpiresMetadata(
+                    OperationalStoreOptions.Value,
                     entity,
                     entity.Expiration
                 );
-                await _documentSession.SaveChangesAsync().ConfigureAwait(false);
+                await DocumentSession.SaveChangesAsync().ConfigureAwait(false);
                 return StoreResult.Success();
             }
             catch (ConcurrencyException concurrencyException)
             {
-                _logger.LogError(
+                Logger.LogError(
                     concurrencyException,
                     "Error creating persisted grant. Key {0}; Entity ID {1}",
                     entity.Key,
@@ -246,7 +271,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
             catch (Exception ex)
             {
-                _logger.LogError(
+                Logger.LogError(
                     ex,
                     "Error creating persisted grant. Key {0}; Entity ID {1}",
                     entity.Key,
@@ -257,29 +282,29 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
         }
 
         protected virtual async Task<StoreResult> UpdateAsync(
-            Entities.PersistedGrant newGrantData,
-            Entities.PersistedGrant entityInSession)
+            TPersistedGrantEntity newGrantData,
+            TPersistedGrantEntity entityInSession)
         {
-            _mapper.Map(newGrantData, entityInSession);
+            Mapper.Map(newGrantData, entityInSession);
             string entityId = entityInSession.Id;
 
             try
             {
-                string changeVector = _documentSession.Advanced.GetChangeVectorFor(entityInSession);
-                await _documentSession
+                string changeVector = DocumentSession.Advanced.GetChangeVectorFor(entityInSession);
+                await DocumentSession
                     .StoreAsync(entityInSession, changeVector, entityId)
                     .ConfigureAwait(false);
-                _documentSession.ManageDocumentExpiresMetadata(
-                    _operationalStoreOptions.Value,
+                DocumentSession.ManageDocumentExpiresMetadata(
+                    OperationalStoreOptions.Value,
                     entityInSession,
                     entityInSession.Expiration
                 );
-                await _documentSession.SaveChangesAsync().ConfigureAwait(false);
+                await DocumentSession.SaveChangesAsync().ConfigureAwait(false);
                 return StoreResult.Success();
             }
             catch (ConcurrencyException concurrencyException)
             {
-                _logger.LogError(
+                Logger.LogError(
                     concurrencyException,
                     "Error updating persisted grant. Entity ID {1}",
                     entityId
@@ -288,7 +313,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
             catch (Exception ex)
             {
-                _logger.LogError(
+                Logger.LogError(
                     ex,
                     "Error updating persisted grant. Entity ID {1}",
                     entityId
@@ -297,8 +322,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
         }
 
-        protected virtual IRavenQueryable<Entities.PersistedGrant> ApplyFilter(
-            IRavenQueryable<Entities.PersistedGrant> query,
+        protected virtual IRavenQueryable<TPersistedGrantEntity> ApplyFilter(
+            IRavenQueryable<TPersistedGrantEntity> query,
             PersistedGrantFilter filter)
         {
             if (!string.IsNullOrWhiteSpace(filter.ClientId))

@@ -5,7 +5,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Entities
     /// <summary>
     /// Entity for device flow codes.
     /// </summary>
-    public class DeviceFlowCode
+    public class DeviceFlowCode: IEntity
     {
         /// <summary>
         /// Entity id.

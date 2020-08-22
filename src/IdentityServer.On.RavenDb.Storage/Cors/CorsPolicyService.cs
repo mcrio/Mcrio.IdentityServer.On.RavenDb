@@ -1,7 +1,6 @@
 using System.Linq;
 using System.Threading.Tasks;
 using IdentityServer4.Services;
-using Mcrio.IdentityServer.On.RavenDb.Storage.Entities;
 using Microsoft.Extensions.Logging;
 using Raven.Client.Documents;
 using Raven.Client.Documents.Linq;
@@ -9,14 +8,25 @@ using Raven.Client.Documents.Session;
 
 namespace Mcrio.IdentityServer.On.RavenDb.Storage.Cors
 {
-    public class CorsPolicyService : ICorsPolicyService
+    public class CorsPolicyService : CorsPolicyService<Entities.Client>
     {
-        private readonly IAsyncDocumentSession _documentSession;
-        private readonly ILogger<CorsPolicyService> _logger;
-
         public CorsPolicyService(
             IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             ILogger<CorsPolicyService> logger)
+            : base(identityServerDocumentSessionProvider, logger)
+        {
+        }
+    }
+
+    public abstract class CorsPolicyService<TClientEntity> : ICorsPolicyService
+        where TClientEntity : Entities.Client
+    {
+        private readonly IAsyncDocumentSession _documentSession;
+        private readonly ILogger<CorsPolicyService<TClientEntity>> _logger;
+
+        public CorsPolicyService(
+            IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
+            ILogger<CorsPolicyService<TClientEntity>> logger)
         {
             /*
              * NOTE: In case we would be injecting the scoped document session service directly we would
@@ -28,12 +38,12 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Cors
         }
 
         /// <inheritdoc/>
-        public async Task<bool> IsOriginAllowedAsync(string origin)
+        public virtual async Task<bool> IsOriginAllowedAsync(string origin)
         {
             origin = origin.ToLowerInvariant();
 
             bool isAllowed = await _documentSession
-                .Query<Client>()
+                .Query<TClientEntity>()
                 .Where(client => client.AllowedCorsOrigins.Any(item => item == origin))
                 .AnyAsync()
                 .ConfigureAwait(false);

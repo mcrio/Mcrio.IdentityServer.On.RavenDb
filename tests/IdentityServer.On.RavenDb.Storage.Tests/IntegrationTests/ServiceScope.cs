@@ -1,3 +1,4 @@
+using IdentityServer4.Models;
 using IdentityServer4.Services;
 using IdentityServer4.Stores;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Mappers;
@@ -19,9 +20,9 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests
             IIdentityServerStoreMapper mapper,
             IAsyncDocumentSession documentSession,
             ICorsPolicyService corsPolicyService,
-            ITokenCleanupService tokenCleanupService, 
-            IClientStoreAdditions clientStoreAdditions,
-            IResourceStoreAdditions resourceStoreAdditions)
+            ITokenCleanupService tokenCleanupService,
+            IClientStoreAdditions<Client> clientStoreAdditions,
+            IResourceStoreAdditions<IdentityResource, ApiResource, ApiScope> resourceStoreAdditions)
         {
             ClientStore = clientStore;
             ResourceStore = resourceStore;
@@ -40,11 +41,11 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests
 
         internal IClientStore ClientStore { get; }
 
-        internal IClientStoreAdditions ClientStoreAdditions { get; }
+        internal IClientStoreAdditions<Client> ClientStoreAdditions { get; }
 
         internal IResourceStore ResourceStore { get; }
 
-        internal IResourceStoreAdditions ResourceStoreAdditions { get; }
+        internal IResourceStoreAdditions<IdentityResource, ApiResource, ApiScope> ResourceStoreAdditions { get; }
 
         internal IDeviceFlowStore DeviceFlowStore { get; }
 

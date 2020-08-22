@@ -1,7 +1,5 @@
 using System;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Mappers;
-using Mcrio.IdentityServer.On.RavenDb.Storage.Stores;
-using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Additions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Raven.Client.Documents.Session;
@@ -30,15 +28,6 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage
 
             serviceCollection.TryAddScoped(documentSessionProvider);
             serviceCollection.TryAddScoped<IIdentityServerStoreMapper, IdentityServerStoreMapper>();
-
-            return serviceCollection;
-        }
-
-        public static IServiceCollection IdentityServerAddConfigurationStoreAdditions(
-            this IServiceCollection serviceCollection)
-        {
-            serviceCollection.TryAddTransient<IClientStoreAdditions, ClientStoreAdditions>();
-            serviceCollection.TryAddTransient<IResourceStoreAdditions, ResourceStoreAdditions>();
 
             return serviceCollection;
         }

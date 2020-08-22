@@ -25,7 +25,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             };
 
             ServiceScope scope = InitializeServices();
-            IClientStoreAdditions clientStoreAdditions = scope.ClientStoreAdditions;
+            IClientStoreAdditions<Client> clientStoreAdditions = scope.ClientStoreAdditions;
             (await clientStoreAdditions.CreateAsync(testClient)).IsSuccess.Should().BeTrue();
 
             WaitForUserToContinueTheTest(scope.DocumentStore);

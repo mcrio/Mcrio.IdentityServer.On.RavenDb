@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Mcrio.IdentityServer.On.RavenDb.Storage.Entities
 {
-    public class ApiResource
+    public class ApiResource : IEntity
     {
         public string Id { get; set; }
         public bool Enabled { get; set; } = true;

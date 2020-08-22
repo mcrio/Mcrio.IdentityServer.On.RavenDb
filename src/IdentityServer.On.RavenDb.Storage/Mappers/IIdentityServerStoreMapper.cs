@@ -1,5 +1,5 @@
 using AutoMapper;
-using Models = IdentityServer4.Models;
+using Mcrio.IdentityServer.On.RavenDb.Storage.Entities;
 
 namespace Mcrio.IdentityServer.On.RavenDb.Storage.Mappers
 {
@@ -7,28 +7,16 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Mappers
     {
         void Map<TSource, TDestination>(TSource source, TDestination destination);
 
-        void AssertConfigurationIsValid<TProfile>() where TProfile : Profile;
+        void AssertConfigurationIsValid<TProfile>()
+            where TProfile : Profile;
 
-        string CreateEntityId<TEntity>(string uniqueValue) where TEntity : class;
+        string CreateEntityId<TEntity>(string uniqueValue)
+            where TEntity : IEntity;
 
-        Entities.Client ToEntity(Models.Client model);
+        TModel ToModel<TEntity, TModel>(TEntity entity)
+            where TEntity : IEntity;
 
-        Models.Client ToModel(Entities.Client entity);
-
-        Entities.ApiResource ToEntity(Models.ApiResource model);
-
-        Models.ApiResource ToModel(Entities.ApiResource entity);
-
-        Entities.IdentityResource ToEntity(Models.IdentityResource model);
-
-        Models.IdentityResource ToModel(Entities.IdentityResource entity);
-
-        Entities.ApiScope ToEntity(Models.ApiScope model);
-
-        Models.ApiScope ToModel(Entities.ApiScope entity);
-
-        Entities.PersistedGrant ToEntity(Models.PersistedGrant model);
-
-        Models.PersistedGrant ToModel(Entities.PersistedGrant entity);
+        TEntity ToEntity<TModel, TEntity>(TModel model)
+            where TEntity : IEntity;
     }
 }

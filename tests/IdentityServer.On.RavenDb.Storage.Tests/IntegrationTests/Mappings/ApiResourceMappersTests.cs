@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Entities;
+using Mcrio.IdentityServer.On.RavenDb.Storage.Mappers;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Mappers.Profiles;
 using Xunit;
 using Xunit.Abstractions;
@@ -23,18 +24,18 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Mapping
         [Fact]
         public void AutomapperConfigurationIsValid()
         {
-            var mapper = InitializeServices().Mapper;
+            IIdentityServerStoreMapper mapper = InitializeServices().Mapper;
             mapper.AssertConfigurationIsValid<ApiResourceMapperProfile>();
         }
 
         [Fact]
         public void Can_Map()
         {
-            var mapper = InitializeServices().Mapper;
+            IIdentityServerStoreMapper mapper = InitializeServices().Mapper;
 
             var model = new ApiResource();
-            var mappedEntity = mapper.ToEntity(model);
-            var mappedModel = mapper.ToModel(mappedEntity);
+            Entities.ApiResource mappedEntity = mapper.ToEntity<ApiResource, Entities.ApiResource>(model);
+            ApiResource mappedModel = mapper.ToModel<Entities.ApiResource, ApiResource>(mappedEntity);
 
             Assert.NotNull(mappedModel);
             Assert.NotNull(mappedEntity);
@@ -43,7 +44,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Mapping
         [Fact]
         public void Properties_Map()
         {
-            var model = new ApiResource()
+            var model = new ApiResource
             {
                 Description = "description",
                 DisplayName = "displayname",
@@ -52,18 +53,20 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Mapping
                 Enabled = false,
             };
 
-            var mapper = InitializeServices().Mapper;
+            IIdentityServerStoreMapper mapper = InitializeServices().Mapper;
 
-            RavenDb.Storage.Entities.ApiResource? mappedEntity = mapper.ToEntity(model);
+            Entities.ApiResource? mappedEntity = mapper.ToEntity<ApiResource, Entities.ApiResource>(model);
 
             mappedEntity.Should().NotBeNull();
             mappedEntity.Scopes.Count.Should().Be(2);
-            var foo1 = mappedEntity.Scopes.FirstOrDefault(x => x == "foo1");
+
+            string? foo1 = mappedEntity.Scopes.FirstOrDefault(x => x == "foo1");
             foo1.Should().NotBeNull();
-            var foo2 = mappedEntity.Scopes.FirstOrDefault(x => x == "foo2");
+
+            string? foo2 = mappedEntity.Scopes.FirstOrDefault(x => x == "foo2");
             foo2.Should().NotBeNull();
 
-            var mappedModel = mapper.ToModel(mappedEntity);
+            ApiResource mappedModel = mapper.ToModel<Entities.ApiResource, ApiResource>(mappedEntity);
 
             mappedModel.Description.Should().Be("description");
             mappedModel.DisplayName.Should().Be("displayname");
@@ -74,24 +77,22 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Mapping
         [Fact]
         public void missing_values_should_use_defaults()
         {
-            var entity = new RavenDb.Storage.Entities.ApiResource
+            var entity = new Entities.ApiResource
             {
                 Secrets = new List<ApiResourceSecret>
                 {
-                    new ApiResourceSecret
-                    {
-                    }
-                }
+                    new ApiResourceSecret(),
+                },
             };
 
             var def = new ApiResource
             {
-                ApiSecrets = { new Secret("foo") }
+                ApiSecrets = { new Secret("foo") },
             };
 
-            var mapper = InitializeServices().Mapper;
+            IIdentityServerStoreMapper mapper = InitializeServices().Mapper;
 
-            var model = mapper.ToModel(entity);
+            ApiResource model = mapper.ToModel<Entities.ApiResource, ApiResource>(entity);
             model.ApiSecrets.First().Type.Should().Be(def.ApiSecrets.First().Type);
         }
 
@@ -114,7 +115,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Mapping
                 Created = created,
             };
 
-            var mapper = InitializeServices().Mapper;
+            IIdentityServerStoreMapper mapper = InitializeServices().Mapper;
 
             entity1.Should().NotBeEquivalentTo(entity2);
             mapper.Map(entity1, entity2);
@@ -131,9 +132,9 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Mapping
                 Name = "test-name",
             };
 
-            var mapper = InitializeServices().Mapper;
+            IIdentityServerStoreMapper mapper = InitializeServices().Mapper;
 
-            RavenDb.Storage.Entities.ApiResource entity = mapper.ToEntity(model);
+            Entities.ApiResource entity = mapper.ToEntity<ApiResource, Entities.ApiResource>(model);
             _output.WriteLine(entity.Id);
             entity.Id.Should().NotBeEmpty();
             entity.Id.Should().EndWith("test-name");

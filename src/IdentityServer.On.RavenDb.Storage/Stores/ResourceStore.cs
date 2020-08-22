@@ -7,28 +7,46 @@ using IdentityServer4.Stores;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Mappers;
 using Microsoft.Extensions.Logging;
 using Raven.Client.Documents;
+using Raven.Client.Documents.Commands;
 using Raven.Client.Documents.Linq;
 using Raven.Client.Documents.Session;
 
 namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
 {
-    public class ResourceStore : IResourceStore
+    public class ResourceStore : ResourceStore<Entities.IdentityResource, Entities.ApiResource, Entities.ApiScope>
     {
-        private readonly IAsyncDocumentSession _documentSession;
-        private readonly IIdentityServerStoreMapper _mapper;
-        private readonly ILogger<ResourceStore> _logger;
-
         public ResourceStore(
             IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             IIdentityServerStoreMapper mapper,
-            ILogger<ResourceStore> logger)
+            ILogger<ResourceStore<Entities.IdentityResource, Entities.ApiResource, Entities.ApiScope>> logger)
+            : base(identityServerDocumentSessionProvider, mapper, logger)
         {
-            _documentSession = identityServerDocumentSessionProvider();
-            _mapper = mapper;
-            _logger = logger;
+        }
+    }
+
+    public abstract class ResourceStore<TIdentityResourceEntity, TApiResourceEntity, TApiScopeEntity> : IResourceStore
+        where TIdentityResourceEntity : Entities.IdentityResource
+        where TApiResourceEntity : Entities.ApiResource
+        where TApiScopeEntity : Entities.ApiScope
+
+    {
+        protected ResourceStore(
+            IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
+            IIdentityServerStoreMapper mapper,
+            ILogger<ResourceStore<TIdentityResourceEntity, TApiResourceEntity, TApiScopeEntity>> logger)
+        {
+            DocumentSession = identityServerDocumentSessionProvider();
+            Mapper = mapper;
+            Logger = logger;
         }
 
-        public async Task<IEnumerable<IdentityResource>> FindIdentityResourcesByScopeNameAsync(
+        protected IAsyncDocumentSession DocumentSession { get; }
+
+        protected IIdentityServerStoreMapper Mapper { get; }
+
+        protected ILogger<ResourceStore<TIdentityResourceEntity, TApiResourceEntity, TApiScopeEntity>> Logger { get; }
+
+        public virtual async Task<IEnumerable<IdentityResource>> FindIdentityResourcesByScopeNameAsync(
             IEnumerable<string> scopeNames)
         {
             if (scopeNames == null)
@@ -37,7 +55,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
 
             List<string> ids = scopeNames
-                .Select(scopeName => _mapper.CreateEntityId<Entities.IdentityResource>(scopeName))
+                .Select(scopeName => Mapper.CreateEntityId<TIdentityResourceEntity>(scopeName))
                 .ToList();
 
             if (ids.Count == 0)
@@ -45,17 +63,17 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                 return new IdentityResource[0];
             }
 
-            Dictionary<string, Entities.IdentityResource> entitiesDict = await _documentSession
-                .LoadAsync<Entities.IdentityResource>(ids)
+            Dictionary<string, TIdentityResourceEntity> entitiesDict = await DocumentSession
+                .LoadAsync<TIdentityResourceEntity>(ids)
                 .ConfigureAwait(false);
 
             return entitiesDict
                 .Values
                 .Where(entity => entity != null)
-                .Select(entity => _mapper.ToModel(entity));
+                .Select(entity => Mapper.ToModel<TIdentityResourceEntity, IdentityResource>(entity));
         }
 
-        public async Task<IEnumerable<ApiScope>> FindApiScopesByNameAsync(IEnumerable<string> scopeNames)
+        public virtual async Task<IEnumerable<ApiScope>> FindApiScopesByNameAsync(IEnumerable<string> scopeNames)
         {
             if (scopeNames == null)
             {
@@ -63,7 +81,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
 
             List<string> ids = scopeNames
-                .Select(scopeName => _mapper.CreateEntityId<Entities.ApiScope>(scopeName))
+                .Select(scopeName => Mapper.CreateEntityId<TApiScopeEntity>(scopeName))
                 .ToList();
 
             if (ids.Count == 0)
@@ -71,17 +89,18 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                 return new ApiScope[0];
             }
 
-            Dictionary<string, Entities.ApiScope> entitiesDict = await _documentSession
-                .LoadAsync<Entities.ApiScope>(ids)
+            Dictionary<string, TApiScopeEntity> entitiesDict = await DocumentSession
+                .LoadAsync<TApiScopeEntity>(ids)
                 .ConfigureAwait(false);
 
             return entitiesDict
                 .Values
                 .Where(entity => entity != null)
-                .Select(entity => _mapper.ToModel(entity));
+                .Select(entity => Mapper.ToModel<TApiScopeEntity, ApiScope>(entity));
         }
 
-        public async Task<IEnumerable<ApiResource>> FindApiResourcesByScopeNameAsync(IEnumerable<string> scopeNames)
+        public virtual async Task<IEnumerable<ApiResource>> FindApiResourcesByScopeNameAsync(
+            IEnumerable<string> scopeNames)
         {
             if (scopeNames == null)
             {
@@ -95,16 +114,17 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                 return new ApiResource[0];
             }
 
-            List<Entities.ApiResource> entities = await _documentSession
-                .Query<Entities.ApiResource>()
+            List<TApiResourceEntity> entities = await DocumentSession
+                .Query<TApiResourceEntity>()
                 .Where(resource => resource.Scopes.In(names))
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-            return entities.Select(entity => _mapper.ToModel(entity));
+            return entities.Select(entity => Mapper.ToModel<TApiResourceEntity, ApiResource>(entity));
         }
 
-        public async Task<IEnumerable<ApiResource>> FindApiResourcesByNameAsync(IEnumerable<string> apiResourceNames)
+        public virtual async Task<IEnumerable<ApiResource>> FindApiResourcesByNameAsync(
+            IEnumerable<string> apiResourceNames)
         {
             if (apiResourceNames == null)
             {
@@ -112,7 +132,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
 
             List<string> ids = apiResourceNames
-                .Select(apiResourceName => _mapper.CreateEntityId<Entities.ApiResource>(apiResourceName))
+                .Select(apiResourceName => Mapper.CreateEntityId<TApiResourceEntity>(apiResourceName))
                 .ToList();
 
             if (ids.Count == 0)
@@ -120,51 +140,59 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                 return new ApiResource[0];
             }
 
-            Dictionary<string, Entities.ApiResource> entitiesDict = await _documentSession
-                .LoadAsync<Entities.ApiResource>(ids)
+            Dictionary<string, TApiResourceEntity> entitiesDict = await DocumentSession
+                .LoadAsync<TApiResourceEntity>(ids)
                 .ConfigureAwait(false);
 
-            var resources = entitiesDict
+            IEnumerable<ApiResource> resources = entitiesDict
                 .Values
                 .Where(entity => entity != null)
-                .Select(entity => _mapper.ToModel(entity));
+                .Select(entity => Mapper.ToModel<TApiResourceEntity, ApiResource>(entity));
             return resources;
         }
 
-        public async Task<Resources> GetAllResourcesAsync()
+        public virtual async Task<Resources> GetAllResourcesAsync()
         {
-            var identityResourcesQuery = _documentSession.Query<Entities.IdentityResource>();
-            var apiResourceQuery = _documentSession.Query<Entities.ApiResource>();
-            var apiScopesQuery = _documentSession.Query<Entities.ApiScope>();
+            IRavenQueryable<TIdentityResourceEntity> identityResourcesQuery =
+                DocumentSession.Query<TIdentityResourceEntity>();
+            IRavenQueryable<TApiResourceEntity> apiResourceQuery = DocumentSession.Query<TApiResourceEntity>();
+            IRavenQueryable<TApiScopeEntity> apiScopesQuery = DocumentSession.Query<TApiScopeEntity>();
 
-            var identityStreamResult = await _documentSession
-                .Advanced
-                .StreamAsync(identityResourcesQuery)
-                .ConfigureAwait(false);
+            Raven.Client.Util.IAsyncEnumerator<StreamResult<TIdentityResourceEntity>> identityStreamResult =
+                await DocumentSession
+                    .Advanced
+                    .StreamAsync(identityResourcesQuery)
+                    .ConfigureAwait(false);
             var identityResources = new List<IdentityResource>();
             while (await identityStreamResult.MoveNextAsync().ConfigureAwait(false))
             {
-                identityResources.Add(_mapper.ToModel(identityStreamResult.Current.Document));
+                identityResources.Add(
+                    Mapper.ToModel<TIdentityResourceEntity, IdentityResource>(identityStreamResult.Current.Document)
+                );
             }
 
-            var apiResourceStreamResult = await _documentSession
-                .Advanced
-                .StreamAsync(apiResourceQuery)
-                .ConfigureAwait(false);
+            Raven.Client.Util.IAsyncEnumerator<StreamResult<TApiResourceEntity>> apiResourceStreamResult =
+                await DocumentSession
+                    .Advanced
+                    .StreamAsync(apiResourceQuery)
+                    .ConfigureAwait(false);
             var apiResources = new List<ApiResource>();
             while (await apiResourceStreamResult.MoveNextAsync().ConfigureAwait(false))
             {
-                apiResources.Add(_mapper.ToModel(apiResourceStreamResult.Current.Document));
+                apiResources.Add(
+                    Mapper.ToModel<TApiResourceEntity, ApiResource>(apiResourceStreamResult.Current.Document)
+                );
             }
 
-            var apiScopeStreamResult = await _documentSession
-                .Advanced
-                .StreamAsync(apiScopesQuery)
-                .ConfigureAwait(false);
+            Raven.Client.Util.IAsyncEnumerator<StreamResult<TApiScopeEntity>> apiScopeStreamResult =
+                await DocumentSession
+                    .Advanced
+                    .StreamAsync(apiScopesQuery)
+                    .ConfigureAwait(false);
             var apiScopes = new List<ApiScope>();
             while (await apiScopeStreamResult.MoveNextAsync().ConfigureAwait(false))
             {
-                apiScopes.Add(_mapper.ToModel(apiScopeStreamResult.Current.Document));
+                apiScopes.Add(Mapper.ToModel<TApiScopeEntity, ApiScope>(apiScopeStreamResult.Current.Document));
             }
 
             return new Resources(identityResources, apiResources, apiScopes);

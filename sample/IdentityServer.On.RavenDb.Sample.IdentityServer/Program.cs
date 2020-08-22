@@ -74,10 +74,10 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
         {
             using IServiceScope scope = host.Services.CreateScope();
 
-            IResourceStoreAdditions apiResourceStoreAdditions =
-                scope.ServiceProvider.GetRequiredService<IResourceStoreAdditions>();
-            IClientStoreAdditions clientStoreAdditions =
-                scope.ServiceProvider.GetRequiredService<IClientStoreAdditions>();
+            IResourceStoreAdditions<IdentityResource, ApiResource, ApiScope> apiResourceStoreAdditions =
+                scope.ServiceProvider.GetRequiredService<IResourceStoreAdditions<IdentityResource, ApiResource, ApiScope>>();
+            IClientStoreAdditions<Client> clientStoreAdditions =
+                scope.ServiceProvider.GetRequiredService<IClientStoreAdditions<Client>>();
 
             IAsyncDocumentSession identityServerDocumentSession =
                 scope.ServiceProvider.GetRequiredService<IdentityServerDocumentSessionProvider>()();
