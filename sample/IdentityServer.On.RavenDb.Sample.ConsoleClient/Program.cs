@@ -9,6 +9,7 @@ namespace IdentityServer.On.RavenDb.Sample.ConsoleClient
     {
         public static async Task Main(string[] args)
         {
+            Console.Title = "OAuth Client Credentials sample";
             Console.WriteLine("Hello my friend. Let's go :]");
             Console.WriteLine();
 
@@ -21,7 +22,7 @@ namespace IdentityServer.On.RavenDb.Sample.ConsoleClient
                 Console.WriteLine("Error: we were expecting a forbidden status code.");
                 return;
             }
-
+            
             Console.WriteLine("Requesting https://localhost:5011/just-authenticated");
             Console.WriteLine();
 
@@ -32,16 +33,16 @@ namespace IdentityServer.On.RavenDb.Sample.ConsoleClient
 
             // get discovery document
             var authClient = new HttpClient();
-            DiscoveryDocumentResponse disco = await authClient.GetDiscoveryDocumentAsync("https://localhost:5001");
+            DiscoveryDocumentResponse discovery = await authClient.GetDiscoveryDocumentAsync("https://localhost:5001");
 
             // request token
-            Console.WriteLine("Lets request an access token...");
-            Console.WriteLine();
+            Console.WriteLine("Lets request an access token... Press enter to continue:");
+            Console.ReadLine();
 
             TokenResponse tokenResponse = await authClient.RequestClientCredentialsTokenAsync(
                 new ClientCredentialsTokenRequest
                 {
-                    Address = disco.TokenEndpoint,
+                    Address = discovery.TokenEndpoint,
                     ClientId = "machine_to_machine",
                     ClientSecret = "machine_to_machine_secret",
                     Scope = "my_api.access shared_scope"
@@ -60,6 +61,8 @@ namespace IdentityServer.On.RavenDb.Sample.ConsoleClient
             // request api endpoint
             myApiClient.SetBearerToken(tokenResponse.AccessToken);
 
+            Console.WriteLine("Lets request a secret MyApi endpoint. Press enter to continue:");
+            Console.ReadLine();
             Console.WriteLine("Requesting https://localhost:5011/just-authenticated");
             Console.WriteLine();
 

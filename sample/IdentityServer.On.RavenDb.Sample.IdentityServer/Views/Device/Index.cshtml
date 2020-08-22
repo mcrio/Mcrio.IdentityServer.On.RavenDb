@@ -1,0 +1,15 @@
+@model DeviceCodeViewModel
+
+<h2>Device code flow</h2>
+
+<form asp-controller="Device" asp-action="VerifyCode" method="post">
+    <div>
+        <label>User Code</label>
+        <input asp-for="UserCode"/>
+        <span asp-validation-for="UserCode"></span>
+    </div>
+    <div>
+        <button type="submit">Apply</button>
+    </div>
+    <div asp-validation-summary="All"></div>
+</form>

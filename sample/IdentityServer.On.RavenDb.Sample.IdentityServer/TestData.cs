@@ -10,7 +10,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
         {
             new IdentityResources.OpenId(),
         };
-        
+
         // Having ApiResources populates the `aud` token value with APIs that have the requested scope.
         internal static IEnumerable<ApiResource> GetApiResources() => new List<ApiResource>
         {
@@ -39,6 +39,16 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
                 ClientSecrets = { new Secret("machine_to_machine_secret".ToSha256()) },
                 AllowedGrantTypes = GrantTypes.ClientCredentials,
                 AllowedScopes = { "my_api.access", "shared_scope" },
+            },
+            new Client
+            {
+                ClientId = "device_flow",
+                ClientSecrets = { new Secret("device_flow_secret".ToSha256()) },
+                AllowedGrantTypes = GrantTypes.DeviceFlow,
+                AllowedScopes = { "openid", "my_api.access", "shared_scope" },
+                RequireConsent = false,
+                AllowOfflineAccess = true,
+                AccessTokenLifetime = 5 * 60, // 5min
             },
             new Client
             {

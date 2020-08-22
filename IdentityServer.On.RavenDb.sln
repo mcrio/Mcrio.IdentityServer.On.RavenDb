@@ -20,6 +20,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityServer.On.RavenDb.S
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityServer.On.RavenDb.Sample.MvcClient", "sample\IdentityServer.On.RavenDb.Sample.MvcClient\IdentityServer.On.RavenDb.Sample.MvcClient.csproj", "{1BCEA592-F4D6-44C8-81BF-D2B837F29291}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityServer.On.RavenDb.Sample.DeviceFlowClient", "sample\IdentityServer.On.RavenDb.Sample.DeviceFlowClient\IdentityServer.On.RavenDb.Sample.DeviceFlowClient.csproj", "{FAFF759D-8C9A-42E1-A9E2-F5B146C4412B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -54,6 +56,10 @@ Global
 		{1BCEA592-F4D6-44C8-81BF-D2B837F29291}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1BCEA592-F4D6-44C8-81BF-D2B837F29291}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1BCEA592-F4D6-44C8-81BF-D2B837F29291}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FAFF759D-8C9A-42E1-A9E2-F5B146C4412B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FAFF759D-8C9A-42E1-A9E2-F5B146C4412B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FAFF759D-8C9A-42E1-A9E2-F5B146C4412B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FAFF759D-8C9A-42E1-A9E2-F5B146C4412B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{2723EA19-5DA6-4D43-8A68-51FFECBBBEE5} = {9FF573FB-9081-4D05-A2D5-12CA6498CCF9}
@@ -63,5 +69,6 @@ Global
 		{D6B189C7-AA53-4ACD-9786-47AF889B94A5} = {4072716C-B9CA-40B2-81EA-C1556252C86A}
 		{7B65ABA7-8155-47F2-B572-BA71ED49DA6C} = {4072716C-B9CA-40B2-81EA-C1556252C86A}
 		{1BCEA592-F4D6-44C8-81BF-D2B837F29291} = {4072716C-B9CA-40B2-81EA-C1556252C86A}
+		{FAFF759D-8C9A-42E1-A9E2-F5B146C4412B} = {4072716C-B9CA-40B2-81EA-C1556252C86A}
 	EndGlobalSection
 EndGlobal

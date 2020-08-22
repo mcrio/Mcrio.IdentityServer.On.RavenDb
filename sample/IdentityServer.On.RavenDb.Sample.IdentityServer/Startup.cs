@@ -117,6 +117,10 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
 
             app.UseRouting();
 
+            app.UseAuthentication();
+            
+            app.UseAuthorization();
+            
             app.UseIdentityServer();
 
             app.UseEndpoints(endpoints => { endpoints.MapDefaultControllerRoute(); });
