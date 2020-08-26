@@ -18,7 +18,9 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
             database ??= store.Database;
 
             if (string.IsNullOrWhiteSpace(database))
+            {
                 throw new ArgumentException("Value cannot be null or whitespace.", nameof(database));
+            }
 
             try
             {
@@ -27,7 +29,9 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
             catch (DatabaseDoesNotExistException)
             {
                 if (createDatabaseIfNotExists == false)
+                {
                     throw;
+                }
 
                 try
                 {

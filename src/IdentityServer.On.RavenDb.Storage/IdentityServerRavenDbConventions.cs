@@ -18,37 +18,37 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage
         {
             if (typeof(Client).IsAssignableFrom(type))
             {
-                collectionName = "Apiclients";
+                collectionName = "ApiClients";
                 return true;
             }
 
             if (typeof(ApiResource).IsAssignableFrom(type))
             {
-                collectionName = "Apiresources";
+                collectionName = "ApiResources";
                 return true;
             }
 
             if (typeof(ApiScope).IsAssignableFrom(type))
             {
-                collectionName = "Apiscopes";
+                collectionName = "ApiScopes";
                 return true;
             }
 
             if (typeof(DeviceFlowCode).IsAssignableFrom(type))
             {
-                collectionName = "Apideviceflows";
+                collectionName = "ApiDeviceFlows";
                 return true;
             }
 
             if (typeof(IdentityResource).IsAssignableFrom(type))
             {
-                collectionName = "Apiidentresources";
+                collectionName = "ApiIdentResources";
                 return true;
             }
 
             if (typeof(PersistedGrant).IsAssignableFrom(type))
             {
-                collectionName = "Apigrants";
+                collectionName = "ApiGrants";
                 return true;
             }
 
