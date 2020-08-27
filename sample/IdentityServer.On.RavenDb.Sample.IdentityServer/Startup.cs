@@ -42,7 +42,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
                             return identityServerCollectionName;
                         }
 
-                        if (IdentityRavenDbConventions.TryGetCollectionName<RavenIdentityUser, RavenIdentityRole>(
+                        if (IdentityRavenDbConventions.TryGetCollectionName(
                             type,
                             out string? identityCollectionName))
                         {

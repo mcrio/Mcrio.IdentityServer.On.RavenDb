@@ -42,10 +42,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
             try
             {
                 userManager.CreateAsync(
-                    new RavenIdentityUser
-                    {
-                        UserName = "bob",
-                    },
+                    new RavenIdentityUser("bob"),
                     "Pass123$"
                 ).GetAwaiter().GetResult();
             }
@@ -57,10 +54,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
             try
             {
                 userManager.CreateAsync(
-                    new RavenIdentityUser
-                    {
-                        UserName = "alice",
-                    },
+                    new RavenIdentityUser("alice"),
                     "Pass123$"
                 ).GetAwaiter().GetResult();
             }

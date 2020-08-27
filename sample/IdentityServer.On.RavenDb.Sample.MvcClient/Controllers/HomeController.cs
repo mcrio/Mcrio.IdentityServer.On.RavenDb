@@ -47,17 +47,19 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.MvcClient.Controllers
                 {
                     viewModel.Error = tokenResponse.Error;
                 }
+                else
+                {
+                    AuthenticateResult auth = await HttpContext.AuthenticateAsync("cookie");
+                    auth.Properties.UpdateTokenValue("access_token", tokenResponse.AccessToken);
+                    auth.Properties.UpdateTokenValue("refresh_token", tokenResponse.RefreshToken);
+                    auth.Properties.UpdateTokenValue("id_token", tokenResponse.IdentityToken);
 
-                AuthenticateResult auth = await HttpContext.AuthenticateAsync("cookie");
-                auth.Properties.UpdateTokenValue("access_token", tokenResponse.AccessToken);
-                auth.Properties.UpdateTokenValue("refresh_token", tokenResponse.RefreshToken);
-                auth.Properties.UpdateTokenValue("id_token", tokenResponse.IdentityToken);
+                    await HttpContext.SignInAsync("cookie", auth.Principal, auth.Properties);
 
-                await HttpContext.SignInAsync("cookie", auth.Principal, auth.Properties);
-
-                viewModel.AccessToken = tokenResponse.AccessToken;
-                viewModel.RefreshToken = tokenResponse.RefreshToken;
-                viewModel.IdToken = tokenResponse.IdentityToken;
+                    viewModel.AccessToken = tokenResponse.AccessToken;
+                    viewModel.RefreshToken = tokenResponse.RefreshToken;
+                    viewModel.IdToken = tokenResponse.IdentityToken;   
+                }
             }
 
             return View(viewModel);

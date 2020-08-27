@@ -86,7 +86,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer.Controllers
                 return View(viewModel);
             }
 
-            var newUser = new RavenIdentityUser { UserName = viewModel.Username };
+            var newUser = new RavenIdentityUser(viewModel.Username);
             IdentityResult registerResult = await _userManager.CreateAsync(
                 newUser,
                 viewModel.Password
