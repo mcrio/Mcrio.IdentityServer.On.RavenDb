@@ -85,13 +85,13 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Mapping
         {
             var id = Guid.NewGuid().ToString();
             DateTime created = DateTime.UtcNow;
-            var entity1 = new RavenDb.Storage.Entities.ApiScope()
+            var entity1 = new Entities.ApiScope()
             {
                 Id = id,
                 Name = "test",
             };
 
-            var entity2 = new RavenDb.Storage.Entities.ApiScope()
+            var entity2 = new Entities.ApiScope()
             {
                 Id = id,
                 Name = "test 22222",

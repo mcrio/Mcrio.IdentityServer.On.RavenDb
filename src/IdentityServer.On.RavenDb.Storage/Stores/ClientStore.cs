@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using IdentityServer4.Stores;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Entities;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Mappers;
+using Mcrio.IdentityServer.On.RavenDb.Storage.RavenDb;
 using Raven.Client.Documents.Session;
 
 namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
@@ -10,9 +11,9 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
     public class ClientStore : ClientStore<Client>
     {
         public ClientStore(
-            IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
+            IIdentityServerDocumentSessionWrapper identityServerDocumentSessionWrapper,
             IIdentityServerStoreMapper mapper)
-            : base(identityServerDocumentSessionProvider, mapper)
+            : base(identityServerDocumentSessionWrapper, mapper)
         {
         }
     }
@@ -21,10 +22,10 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
         where TClientEntity : Client
     {
         protected ClientStore(
-            IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
+            IIdentityServerDocumentSessionWrapper identityServerDocumentSessionWrapper,
             IIdentityServerStoreMapper mapper)
         {
-            DocumentSession = identityServerDocumentSessionProvider();
+            DocumentSession = identityServerDocumentSessionWrapper.Session;
             Mapper = mapper;
         }
 

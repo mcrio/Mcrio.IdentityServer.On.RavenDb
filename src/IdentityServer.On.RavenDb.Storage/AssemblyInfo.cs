@@ -4,4 +4,4 @@ using System.Runtime.CompilerServices;
 
 namespace Mcrio.IdentityServer.On.RavenDb.Storage
 {
-} 
+}

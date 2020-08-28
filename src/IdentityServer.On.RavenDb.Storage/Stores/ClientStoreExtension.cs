@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using IdentityServer4.Models;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Mappers;
+using Mcrio.IdentityServer.On.RavenDb.Storage.RavenDb;
 using Microsoft.Extensions.Logging;
 using Raven.Client.Documents.Session;
 using Raven.Client.Exceptions;
@@ -12,10 +13,10 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
     public class ClientStoreExtension : ClientStoreExtension<Client, Entities.Client>
     {
         public ClientStoreExtension(
-            IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
+            IIdentityServerDocumentSessionWrapper identityServerDocumentSessionWrapper,
             IIdentityServerStoreMapper mapper,
             ILogger<ClientStoreExtension<Client, Entities.Client>> logger)
-            : base(identityServerDocumentSessionProvider, mapper, logger)
+            : base(identityServerDocumentSessionWrapper, mapper, logger)
         {
         }
     }
@@ -25,11 +26,11 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
         where TClientEntity : Entities.Client
     {
         protected ClientStoreExtension(
-            IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
+            IIdentityServerDocumentSessionWrapper identityServerDocumentSessionWrapper,
             IIdentityServerStoreMapper mapper,
             ILogger<ClientStoreExtension<TClientModel, TClientEntity>> logger)
         {
-            DocumentSession = identityServerDocumentSessionProvider();
+            DocumentSession = identityServerDocumentSessionWrapper.Session;
             Mapper = mapper;
             Logger = logger;
         }

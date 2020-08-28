@@ -3,6 +3,7 @@ using IdentityServer4.Models;
 using Mcrio.AspNetCore.Identity.On.RavenDb;
 using Mcrio.AspNetCore.Identity.On.RavenDb.Model.User;
 using Mcrio.IdentityServer.On.RavenDb.Storage;
+using Mcrio.IdentityServer.On.RavenDb.Storage.RavenDb;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Stores;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
@@ -34,7 +35,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
             using IServiceScope scope = host.Services.CreateScope();
 
             IAsyncDocumentSession identityDocumentSession =
-                scope.ServiceProvider.GetRequiredService<IdentityDocumentSessionProvider>()();
+                scope.ServiceProvider.GetRequiredService<IIdentityServerDocumentSessionWrapper>().Session;
 
             UserManager<RavenIdentityUser> userManager =
                 scope.ServiceProvider.GetRequiredService<UserManager<RavenIdentityUser>>();
@@ -74,7 +75,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
                 scope.ServiceProvider.GetRequiredService<IClientStoreExtension<Client>>();
 
             IAsyncDocumentSession identityServerDocumentSession =
-                scope.ServiceProvider.GetRequiredService<IdentityServerDocumentSessionProvider>()();
+                scope.ServiceProvider.GetRequiredService<IIdentityServerDocumentSessionWrapper>().Session;
 
             bool hasApiResources = identityServerDocumentSession
                 .Query<Mcrio.IdentityServer.On.RavenDb.Storage.Entities.ApiResource>()

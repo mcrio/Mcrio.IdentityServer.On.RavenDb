@@ -7,6 +7,7 @@ using IdentityServer4.Stores;
 using IdentityServer4.Stores.Serialization;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Cors;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Mappers;
+using Mcrio.IdentityServer.On.RavenDb.Storage.RavenDb;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Stores;
 using Mcrio.IdentityServer.On.RavenDb.Storage.TokenCleanup;
 using Microsoft.Extensions.DependencyInjection;
@@ -54,7 +55,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests
 
             // Identity server ravendb related services
             serviceCollection.IdentityServerAddRavenDbServices(
-                provider => provider.GetRequiredService<IAsyncDocumentSession>
+                provider => provider.GetRequiredService<IAsyncDocumentSession>()
             );
 
             // Identity Server operational services

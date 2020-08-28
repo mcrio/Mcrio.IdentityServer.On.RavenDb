@@ -1,7 +1,7 @@
 using System;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Entities;
 
-namespace Mcrio.IdentityServer.On.RavenDb.Storage
+namespace Mcrio.IdentityServer.On.RavenDb.Storage.RavenDb
 {
     /// <summary>
     /// Method to produce predefined collection names for implemented entity types.

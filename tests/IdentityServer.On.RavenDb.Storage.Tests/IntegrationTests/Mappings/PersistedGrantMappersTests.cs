@@ -50,13 +50,13 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Mapping
         public void ShouldMapSameType()
         {
             var id = Guid.NewGuid().ToString();
-            var entity1 = new RavenDb.Storage.Entities.PersistedGrant()
+            var entity1 = new Entities.PersistedGrant()
             {
                 Key = id,
                 SubjectId = "test",
             };
 
-            var entity2 = new RavenDb.Storage.Entities.PersistedGrant()
+            var entity2 = new Entities.PersistedGrant()
             {
                 Key = id,
                 SubjectId = "test 22222",

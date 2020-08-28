@@ -6,8 +6,10 @@ using IdentityServer4.Stores;
 using IdentityServer4.Stores.Serialization;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Entities;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Mappers;
+using Mcrio.IdentityServer.On.RavenDb.Storage.RavenDb;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Exceptions;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Extensions;
+using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Utility;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Raven.Client.Documents.Operations.CompareExchange;
@@ -20,11 +22,11 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
     {
         public DeviceFlowStore(
             IPersistentGrantSerializer serializer,
-            IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
+            IIdentityServerDocumentSessionWrapper identityServerDocumentSessionWrapper,
             IIdentityServerStoreMapper mapper,
             ILogger<DeviceFlowStore<DeviceFlowCode>> logger,
             IOptionsSnapshot<OperationalStoreOptions> operationalStoreOptions)
-            : base(serializer, identityServerDocumentSessionProvider, mapper, logger, operationalStoreOptions)
+            : base(serializer, identityServerDocumentSessionWrapper, mapper, logger, operationalStoreOptions)
         {
         }
     }
@@ -34,12 +36,12 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
     {
         protected DeviceFlowStore(
             IPersistentGrantSerializer serializer,
-            IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
+            IIdentityServerDocumentSessionWrapper identityServerDocumentSessionWrapper,
             IIdentityServerStoreMapper mapper,
             ILogger<DeviceFlowStore<TDeviceFlowCode>> logger,
             IOptionsSnapshot<OperationalStoreOptions> operationalStoreOptions)
         {
-            DocumentSession = identityServerDocumentSessionProvider();
+            DocumentSession = identityServerDocumentSessionWrapper.Session;
             Serializer = serializer;
             Mapper = mapper;
             Logger = logger;
@@ -92,12 +94,16 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                 throw new ArgumentException(errorMessage);
             }
 
+            CompareExchangeUtility compareExchangeUtility = CreateCompareExchangeUtility();
+
             // Reserve the unique DeviceCode.
-            bool deviceCodeReservationResult = await DocumentSession.CreateReservationAsync(
-                RavenDbCompareExchangeExtension.ReservationType.DeviceCode,
-                deviceCode,
-                deviceFlowCodeEntity.Id
-            ).ConfigureAwait(false);
+            bool deviceCodeReservationResult = await compareExchangeUtility
+                .CreateReservationAsync<string, TDeviceFlowCode>(
+                    CompareExchangeUtility.ReservationType.DeviceCode,
+                    deviceFlowCodeEntity,
+                    deviceCode,
+                    deviceFlowCodeEntity.Id
+                ).ConfigureAwait(false);
             if (!deviceCodeReservationResult)
             {
                 throw new DuplicateException();
@@ -133,8 +139,9 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             {
                 if (!saveSuccess)
                 {
-                    bool removeResult = await DocumentSession.RemoveReservationAsync(
-                        RavenDbCompareExchangeExtension.ReservationType.DeviceCode,
+                    bool removeResult = await compareExchangeUtility.RemoveReservationAsync(
+                        CompareExchangeUtility.ReservationType.DeviceCode,
+                        deviceFlowCodeEntity,
                         deviceCode
                     ).ConfigureAwait(false);
                     if (!removeResult)
@@ -294,8 +301,10 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             {
                 if (saveSuccess)
                 {
-                    bool removeResult = await DocumentSession.RemoveReservationAsync(
-                        RavenDbCompareExchangeExtension.ReservationType.DeviceCode,
+                    CompareExchangeUtility compareExchangeUtility = CreateCompareExchangeUtility();
+                    bool removeResult = await compareExchangeUtility.RemoveReservationAsync(
+                        CompareExchangeUtility.ReservationType.DeviceCode,
+                        entity,
                         deviceCode
                     ).ConfigureAwait(false);
                     if (!removeResult)
@@ -413,12 +422,20 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                 : Serializer.Deserialize<DeviceCode>(serializedDeviceCode);
         }
 
+        /// <summary>
+        /// Find device flow code by given device code.
+        /// </summary>
+        /// <param name="deviceCode">Device code to lookup.</param>
+        /// <returns>DeviceFlowCode if found, otherwise Null.</returns>
         protected virtual async Task<TDeviceFlowCode?> FindDeviceFlowCodeAsync(string deviceCode)
         {
-            CompareExchangeValue<string>? compareExchangeResult = await DocumentSession.GetReservationAsync<string>(
-                RavenDbCompareExchangeExtension.ReservationType.DeviceCode,
-                deviceCode
-            ).ConfigureAwait(false);
+            CompareExchangeUtility compareExchangeUtility = CreateCompareExchangeUtility();
+            CompareExchangeValue<string>? compareExchangeResult = await compareExchangeUtility
+                .GetReservationAsync<string, TDeviceFlowCode?>(
+                    CompareExchangeUtility.ReservationType.DeviceCode,
+                    null,
+                    deviceCode
+                ).ConfigureAwait(false);
 
             if (compareExchangeResult is null)
             {
@@ -454,6 +471,15 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
 
             return code;
+        }
+
+        /// <summary>
+        /// Creates an instance of the <see cref="CompareExchangeUtility"/>.
+        /// </summary>
+        /// <returns>Inastance of <see cref="CompareExchangeUtility"/></returns>
+        protected virtual CompareExchangeUtility CreateCompareExchangeUtility()
+        {
+            return new CompareExchangeUtility(DocumentSession);
         }
     }
 }

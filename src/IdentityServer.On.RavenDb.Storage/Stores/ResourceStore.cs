@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using IdentityServer4.Models;
 using IdentityServer4.Stores;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Mappers;
+using Mcrio.IdentityServer.On.RavenDb.Storage.RavenDb;
 using Microsoft.Extensions.Logging;
 using Raven.Client.Documents;
 using Raven.Client.Documents.Commands;
@@ -16,10 +17,10 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
     public class ResourceStore : ResourceStore<Entities.IdentityResource, Entities.ApiResource, Entities.ApiScope>
     {
         public ResourceStore(
-            IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
+            IIdentityServerDocumentSessionWrapper identityServerDocumentSessionWrapper,
             IIdentityServerStoreMapper mapper,
             ILogger<ResourceStore<Entities.IdentityResource, Entities.ApiResource, Entities.ApiScope>> logger)
-            : base(identityServerDocumentSessionProvider, mapper, logger)
+            : base(identityServerDocumentSessionWrapper, mapper, logger)
         {
         }
     }
@@ -31,11 +32,11 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
 
     {
         protected ResourceStore(
-            IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
+            IIdentityServerDocumentSessionWrapper identityServerDocumentSessionWrapper,
             IIdentityServerStoreMapper mapper,
             ILogger<ResourceStore<TIdentityResourceEntity, TApiResourceEntity, TApiScopeEntity>> logger)
         {
-            DocumentSession = identityServerDocumentSessionProvider();
+            DocumentSession = identityServerDocumentSessionWrapper.Session;
             Mapper = mapper;
             Logger = logger;
         }

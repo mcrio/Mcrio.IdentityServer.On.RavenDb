@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using IdentityServer4.Services;
+using Mcrio.IdentityServer.On.RavenDb.Storage.RavenDb;
 using Microsoft.Extensions.Logging;
 using Raven.Client.Documents;
 using Raven.Client.Documents.Linq;
@@ -11,9 +12,9 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Cors
     public class CorsPolicyService : CorsPolicyService<Entities.Client>
     {
         public CorsPolicyService(
-            IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
+            IIdentityServerDocumentSessionWrapper identityServerDocumentSessionWrapper,
             ILogger<CorsPolicyService> logger)
-            : base(identityServerDocumentSessionProvider, logger)
+            : base(identityServerDocumentSessionWrapper, logger)
         {
         }
     }
@@ -25,7 +26,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Cors
         private readonly ILogger<CorsPolicyService<TClientEntity>> _logger;
 
         public CorsPolicyService(
-            IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
+            IIdentityServerDocumentSessionWrapper identityServerDocumentSessionWrapper,
             ILogger<CorsPolicyService<TClientEntity>> logger)
         {
             /*
@@ -33,7 +34,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Cors
              * need to pull it through the IHttpContextAccessor because of https://github.com/aspnet/CORS/issues/105
              * (per official EF core implementation comment)
              */
-            _documentSession = identityServerDocumentSessionProvider();
+            _documentSession = identityServerDocumentSessionWrapper.Session;
             _logger = logger;
         }
 

@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Entities;
+using Mcrio.IdentityServer.On.RavenDb.Storage.RavenDb;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Raven.Client.Documents;
@@ -23,15 +24,15 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.TokenCleanup
         /// <summary>
         /// Initializes a new instance of the <see cref="TokenCleanupService"/> class.
         /// </summary>
-        /// <param name="identityServerDocumentSessionProvider">Provider the document session.</param>
+        /// <param name="identityServerDocumentSessionWrapper">Document session wrapper.</param>
         /// <param name="operationalStoreOptions">Options.</param>
         /// <param name="logger">Logger.</param>
         public TokenCleanupService(
-            IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
+            IIdentityServerDocumentSessionWrapper identityServerDocumentSessionWrapper,
             IOptionsSnapshot<OperationalStoreOptions> operationalStoreOptions,
             ILogger<TokenCleanupService> logger)
         {
-            _documentSession = identityServerDocumentSessionProvider();
+            _documentSession = identityServerDocumentSessionWrapper.Session;
             _logger = logger;
             _operationalStoreOptions = operationalStoreOptions;
         }

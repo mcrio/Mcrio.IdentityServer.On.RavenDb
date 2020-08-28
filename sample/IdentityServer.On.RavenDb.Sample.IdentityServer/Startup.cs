@@ -1,7 +1,9 @@
 using Mcrio.AspNetCore.Identity.On.RavenDb;
 using Mcrio.AspNetCore.Identity.On.RavenDb.Model.Role;
 using Mcrio.AspNetCore.Identity.On.RavenDb.Model.User;
+using Mcrio.AspNetCore.Identity.On.RavenDb.Stores;
 using Mcrio.IdentityServer.On.RavenDb.Storage;
+using Mcrio.IdentityServer.On.RavenDb.Storage.RavenDb;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
@@ -75,7 +77,9 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
                     config.Password.RequireNonAlphanumeric = false;
                     config.Password.RequiredUniqueChars = 1;
                 })
-                .AddRavenDbStores(serviceProvider => serviceProvider.GetRequiredService<IAsyncDocumentSession>)
+                .AddRavenDbStores<RavenUserStore, RavenRoleStore, RavenIdentityUser, RavenIdentityRole>(
+                    serviceProvider => serviceProvider.GetRequiredService<IAsyncDocumentSession>()
+                )
                 .AddDefaultTokenProviders();
 
             services.ConfigureApplicationCookie(config =>
@@ -89,7 +93,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
             services
                 .AddIdentityServer()
                 .AddRavenDbStores(
-                    serviceProvider => serviceProvider.GetRequiredService<IAsyncDocumentSession>,
+                    serviceProvider => serviceProvider.GetRequiredService<IAsyncDocumentSession>(),
                     operationalStoreOptions => Configuration
                         .GetSection("OperationalStoreOptions")
                         .Bind(operationalStoreOptions),

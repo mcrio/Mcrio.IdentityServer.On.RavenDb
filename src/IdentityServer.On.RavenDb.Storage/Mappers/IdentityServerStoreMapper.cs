@@ -3,6 +3,7 @@ using AutoMapper;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Entities;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Extensions;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Mappers.Profiles;
+using Mcrio.IdentityServer.On.RavenDb.Storage.RavenDb;
 using Raven.Client.Documents;
 
 namespace Mcrio.IdentityServer.On.RavenDb.Storage.Mappers
@@ -12,9 +13,9 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Mappers
         private readonly IDocumentStore _documentStore;
         private readonly IMapper _mapper;
 
-        public IdentityServerStoreMapper(IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider)
+        public IdentityServerStoreMapper(IIdentityServerDocumentSessionWrapper identityServerDocumentSessionWrapper)
         {
-            _documentStore = identityServerDocumentSessionProvider().Advanced.DocumentStore;
+            _documentStore = identityServerDocumentSessionWrapper.Session.Advanced.DocumentStore;
 
             var mapperConfiguration = new MapperConfiguration(expression =>
             {

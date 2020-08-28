@@ -43,14 +43,14 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Mapping
         {
             var id = Guid.NewGuid().ToString();
             DateTime created = DateTime.UtcNow;
-            var entity1 = new RavenDb.Storage.Entities.IdentityResource()
+            var entity1 = new Entities.IdentityResource()
             {
                 Id = id,
                 Name = "test",
                 Created = created,
             };
 
-            var entity2 = new RavenDb.Storage.Entities.IdentityResource()
+            var entity2 = new Entities.IdentityResource()
             {
                 Id = id,
                 Name = "test 22222",

@@ -6,6 +6,7 @@ using Mcrio.IdentityServer.On.RavenDb.Storage.Stores;
 using Mcrio.IdentityServer.On.RavenDb.Storage.TokenCleanup;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Raven.Client.Documents.Session;
 
 namespace Mcrio.IdentityServer.On.RavenDb
 {
@@ -20,7 +21,7 @@ namespace Mcrio.IdentityServer.On.RavenDb
         /// <returns>Identity server builder.</returns>
         public static IIdentityServerBuilder AddRavenDbStores(
             this IIdentityServerBuilder builder,
-            Func<IServiceProvider, IdentityServerDocumentSessionProvider> documentSessionProvider,
+            Func<IServiceProvider, IAsyncDocumentSession> documentSessionProvider,
             Action<OperationalStoreOptions>? operationalStoreOptions = null,
             bool addConfigurationStore = true,
             bool addConfigurationStoreCache = true,
@@ -50,7 +51,7 @@ namespace Mcrio.IdentityServer.On.RavenDb
             TIdentityResource, TIdentityResourceEntity, TApiResource, TApiResourceEntity,
             TApiScope, TApiScopeEntity, TPersistedGrantEntity, TDeviceFlowCode>(
             this IIdentityServerBuilder builder,
-            Func<IServiceProvider, IdentityServerDocumentSessionProvider> documentSessionProvider,
+            Func<IServiceProvider, IAsyncDocumentSession> documentSessionProvider,
             Action<OperationalStoreOptions>? operationalStoreOptions = null,
             bool addConfigurationStore = true,
             bool addConfigurationStoreCache = true,

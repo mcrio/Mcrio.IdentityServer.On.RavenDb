@@ -85,7 +85,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Mapping
         {
             Action modelAction = () =>
             {
-                var entity = new RavenDb.Storage.Entities.Client
+                var entity = new Entities.Client
                 {
                     Properties = new Dictionary<string, string>()
                     {
@@ -135,7 +135,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Mapping
                 Claims = new List<ClientClaim> { new ClientClaim { Type = "foo", Value = "bar" } },
             };
 
-            var entity2 = new RavenDb.Storage.Entities.Client
+            var entity2 = new Entities.Client
             {
                 Id = id,
                 ClientName = "test 22222",
