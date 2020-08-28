@@ -476,7 +476,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
         /// <summary>
         /// Creates an instance of the <see cref="CompareExchangeUtility"/>.
         /// </summary>
-        /// <returns>Inastance of <see cref="CompareExchangeUtility"/></returns>
+        /// <returns>Instance of <see cref="CompareExchangeUtility"/>.</returns>
         protected virtual CompareExchangeUtility CreateCompareExchangeUtility()
         {
             return new CompareExchangeUtility(DocumentSession);
