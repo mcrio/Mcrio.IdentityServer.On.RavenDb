@@ -53,7 +53,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
 
         protected IOptionsSnapshot<OperationalStoreOptions> OperationalStoreOptions { get; }
 
-        public virtual async Task StoreAsync(PersistedGrant grant)
+        public virtual Task StoreAsync(PersistedGrant grant)
         {
             if (grant == null)
             {
@@ -62,6 +62,12 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
 
             TPersistedGrantEntity grantEntity =
                 Mapper.ToEntity<PersistedGrant, TPersistedGrantEntity>(grant);
+
+            return StoreAsync(grantEntity);
+        }
+
+        protected virtual async Task StoreAsync(TPersistedGrantEntity grantEntity)
+        {
             if (!CheckRequiredFields(grantEntity, out string errorMsg))
             {
                 Logger.LogError($"Error storing persisted grant because of required fields check failure: {errorMsg}");
@@ -139,22 +145,9 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
 
             string entityId = Mapper.CreateEntityId<TPersistedGrantEntity>(key);
 
-            TPersistedGrantEntity entityInSession = await DocumentSession
-                .LoadAsync<TPersistedGrantEntity>(entityId)
-                .ConfigureAwait(false);
-
-            if (entityInSession is null)
-            {
-                Logger.LogWarning(
-                    "Error removing persisted token. {}",
-                    string.Format(ErrorDescriber.EntityNotFound, entityId)
-                );
-            }
-
             try
             {
-                string changeVector = DocumentSession.Advanced.GetChangeVectorFor(entityInSession);
-                DocumentSession.Delete(entityId, changeVector);
+                DocumentSession.Delete(entityId);
                 await DocumentSession.SaveChangesAsync().ConfigureAwait(false);
             }
             catch (ConcurrencyException concurrencyException)

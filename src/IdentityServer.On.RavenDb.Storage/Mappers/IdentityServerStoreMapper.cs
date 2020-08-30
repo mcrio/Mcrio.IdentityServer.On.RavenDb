@@ -1,31 +1,20 @@
 using System;
+using System.Collections.Generic;
 using AutoMapper;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Entities;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Extensions;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Mappers.Profiles;
-using Mcrio.IdentityServer.On.RavenDb.Storage.RavenDb;
 using Raven.Client.Documents;
 
 namespace Mcrio.IdentityServer.On.RavenDb.Storage.Mappers
 {
-    public class IdentityServerStoreMapper : IIdentityServerStoreMapper
+    public class IdentityServerStoreMapper : BaseMapper, IIdentityServerStoreMapper
     {
         private readonly IDocumentStore _documentStore;
-        private readonly IMapper _mapper;
 
-        public IdentityServerStoreMapper(IIdentityServerDocumentSessionWrapper identityServerDocumentSessionWrapper)
+        public IdentityServerStoreMapper(IDocumentStore documentStore)
         {
-            _documentStore = identityServerDocumentSessionWrapper.Session.Advanced.DocumentStore;
-
-            var mapperConfiguration = new MapperConfiguration(expression =>
-            {
-                expression.AddProfile(new ApiResourceMapperProfile(CreateEntityId<ApiResource>));
-                expression.AddProfile(new ClientMapperProfile(CreateEntityId<Client>));
-                expression.AddProfile(new IdentityResourceMapperProfile(CreateEntityId<IdentityResource>));
-                expression.AddProfile(new PersistedGrantMapperProfile(CreateEntityId<PersistedGrant>));
-                expression.AddProfile(new ScopeMapperProfile(CreateEntityId<ApiScope>));
-            });
-            _mapper = new Mapper(mapperConfiguration);
+            _documentStore = documentStore;
         }
 
         public void Map<TSource, TDestination>(TSource source, TDestination destination)
@@ -40,13 +29,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Mappers
                 throw new ArgumentNullException(nameof(destination));
             }
 
-            _mapper.Map(source, destination);
-        }
-
-        public void AssertConfigurationIsValid<TProfile>()
-            where TProfile : Profile
-        {
-            _mapper.ConfigurationProvider.AssertConfigurationIsValid(typeof(TProfile).FullName);
+            Mapper.Map(source, destination);
         }
 
         public string CreateEntityId<TEntity>(string uniqueValue)
@@ -69,7 +52,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Mappers
                 throw new ArgumentNullException(nameof(entity));
             }
 
-            return _mapper.Map<TModel>(entity);
+            return Mapper.Map<TModel>(entity);
         }
 
         public TEntity ToEntity<TModel, TEntity>(TModel model)
@@ -80,7 +63,19 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Mappers
                 throw new ArgumentNullException(nameof(model));
             }
 
-            return _mapper.Map<TEntity>(model);
+            return Mapper.Map<TEntity>(model);
+        }
+
+        protected override IEnumerable<Profile> GetMapperProfiles()
+        {
+            return new Profile[]
+            {
+                new ApiResourceMapperProfile(CreateEntityId<ApiResource>),
+                new ClientMapperProfile(CreateEntityId<Client>),
+                new IdentityResourceMapperProfile(CreateEntityId<IdentityResource>),
+                new PersistedGrantMapperProfile(CreateEntityId<PersistedGrant>),
+                new ScopeMapperProfile(CreateEntityId<ApiScope>),
+            };
         }
     }
 }

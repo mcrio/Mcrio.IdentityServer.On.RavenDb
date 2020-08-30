@@ -44,9 +44,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests
 
             var serviceCollection = new ServiceCollection();
 
-            serviceCollection.TryAddSingleton(provider =>
-                _documentStore.OpenAsyncSession()
-            );
+            serviceCollection.TryAddSingleton(_documentStore);
             serviceCollection.TryAddScoped(_ => _documentStore.OpenAsyncSession());
 
             serviceCollection.AddHttpContextAccessor();

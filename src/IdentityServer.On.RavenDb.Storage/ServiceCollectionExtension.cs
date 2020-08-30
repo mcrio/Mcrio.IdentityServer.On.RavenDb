@@ -27,10 +27,13 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage
                 throw new ArgumentNullException(nameof(documentSessionProvider));
             }
 
+            // Identity server related Ravendb document session wrapper
             serviceCollection.TryAddScoped<IIdentityServerDocumentSessionWrapper>(
                 provider => new IdentityServerDocumentSessionWrapper(documentSessionProvider(provider))
             );
-            serviceCollection.TryAddScoped<IIdentityServerStoreMapper, IdentityServerStoreMapper>();
+
+            // Register singleton mapper
+            serviceCollection.TryAddSingleton<IIdentityServerStoreMapper, IdentityServerStoreMapper>();
 
             return serviceCollection;
         }

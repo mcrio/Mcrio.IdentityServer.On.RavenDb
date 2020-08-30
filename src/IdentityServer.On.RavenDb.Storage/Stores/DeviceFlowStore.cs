@@ -66,7 +66,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
         /// <param name="data"></param>
         /// <returns>The <see cref="Task"/> that represents the asynchronous operation.</returns>
         /// <exception cref="DuplicateException">When concurrency exception.</exception>
-        public virtual async Task StoreDeviceAuthorizationAsync(string deviceCode, string userCode, DeviceCode data)
+        public virtual Task StoreDeviceAuthorizationAsync(string deviceCode, string userCode, DeviceCode data)
         {
             if (string.IsNullOrWhiteSpace(deviceCode))
             {
@@ -89,11 +89,23 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                 throw new Exception("Device flow code entity must not be null.");
             }
 
+            return StoreDeviceAuthorizationAsync(deviceFlowCodeEntity);
+        }
+
+        /// <summary>
+        /// Device code will be reserved through the RavenDb compare exchange, while the User code is part of the ID.
+        /// </summary>
+        /// <param name="deviceFlowCodeEntity">Device flow code entity.</param>
+        /// <returns>The <see cref="Task"/> that represents the asynchronous operation.</returns>
+        /// <exception cref="DuplicateException">When concurrency exception.</exception>
+        protected virtual async Task StoreDeviceAuthorizationAsync(TDeviceFlowCode deviceFlowCodeEntity)
+        {
             if (!CheckRequiredFields(deviceFlowCodeEntity, out string errorMessage))
             {
                 throw new ArgumentException(errorMessage);
             }
 
+            string deviceCode = deviceFlowCodeEntity.DeviceCode;
             CompareExchangeUtility compareExchangeUtility = CreateCompareExchangeUtility();
 
             // Reserve the unique DeviceCode.

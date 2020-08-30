@@ -1,8 +1,6 @@
 using System;
 using IdentityServer4.Models;
-using Mcrio.AspNetCore.Identity.On.RavenDb;
 using Mcrio.AspNetCore.Identity.On.RavenDb.Model.User;
-using Mcrio.IdentityServer.On.RavenDb.Storage;
 using Mcrio.IdentityServer.On.RavenDb.Storage.RavenDb;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Stores;
 using Microsoft.AspNetCore.Hosting;
