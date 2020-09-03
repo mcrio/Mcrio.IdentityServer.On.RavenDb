@@ -27,11 +27,35 @@ namespace Mcrio.IdentityServer.On.RavenDb
             bool addConfigurationStoreCache = true,
             bool addOperationalStore = true)
         {
+            return AddRavenDbStores<Storage.Entities.PersistedGrant, PersistedGrantStore,
+                Storage.Entities.DeviceFlowCode, DeviceFlowStore>(
+                builder,
+                documentSessionProvider,
+                operationalStoreOptions,
+                addConfigurationStore,
+                addConfigurationStoreCache,
+                addOperationalStore
+            );
+        }
+
+        public static IIdentityServerBuilder AddRavenDbStores<TPersistedGrantEntity, TPersistedGrantStore,
+            TDeviceFlowCode, TDeviceFlowStore>(
+            this IIdentityServerBuilder builder,
+            Func<IServiceProvider, IAsyncDocumentSession> documentSessionProvider,
+            Action<OperationalStoreOptions>? operationalStoreOptions = null,
+            bool addConfigurationStore = true,
+            bool addConfigurationStoreCache = true,
+            bool addOperationalStore = true)
+            where TPersistedGrantEntity : Storage.Entities.PersistedGrant
+            where TDeviceFlowCode : Storage.Entities.DeviceFlowCode, new()
+            where TPersistedGrantStore : PersistedGrantStore<TPersistedGrantEntity>
+            where TDeviceFlowStore : DeviceFlowStore<TDeviceFlowCode>
+        {
             return AddRavenDbStores<ClientStore, ResourceStore, CorsPolicyService,
-                ClientStoreExtension, ResourceStoreExtension, PersistedGrantStore, DeviceFlowStore,
+                ClientStoreExtension, ResourceStoreExtension, TPersistedGrantStore, TDeviceFlowStore,
                 TokenCleanupService, TokenCleanupBackgroundService, Client, Storage.Entities.Client,
                 IdentityResource, Storage.Entities.IdentityResource, ApiResource, Storage.Entities.ApiResource,
-                ApiScope, Storage.Entities.ApiScope, Storage.Entities.PersistedGrant, Storage.Entities.DeviceFlowCode>(
+                ApiScope, Storage.Entities.ApiScope, TPersistedGrantEntity, TDeviceFlowCode>(
                 builder,
                 documentSessionProvider,
                 operationalStoreOptions,
@@ -77,6 +101,16 @@ namespace Mcrio.IdentityServer.On.RavenDb
             where TPersistedGrantEntity : Storage.Entities.PersistedGrant
             where TDeviceFlowCode : Storage.Entities.DeviceFlowCode, new()
         {
+            if (builder == null)
+            {
+                throw new ArgumentNullException(nameof(builder));
+            }
+
+            if (documentSessionProvider == null)
+            {
+                throw new ArgumentNullException(nameof(documentSessionProvider));
+            }
+
             builder.Services.IdentityServerAddRavenDbServices(documentSessionProvider);
 
             if (addConfigurationStore)
