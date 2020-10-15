@@ -33,7 +33,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
             using IServiceScope scope = host.Services.CreateScope();
 
             IAsyncDocumentSession identityDocumentSession =
-                scope.ServiceProvider.GetRequiredService<IIdentityServerDocumentSessionWrapper>().Session;
+                scope.ServiceProvider.GetRequiredService<IdentityServerDocumentSessionProvider>()();
 
             UserManager<RavenIdentityUser> userManager =
                 scope.ServiceProvider.GetRequiredService<UserManager<RavenIdentityUser>>();
@@ -73,7 +73,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
                 scope.ServiceProvider.GetRequiredService<IClientStoreExtension<Client>>();
 
             IAsyncDocumentSession identityServerDocumentSession =
-                scope.ServiceProvider.GetRequiredService<IIdentityServerDocumentSessionWrapper>().Session;
+                scope.ServiceProvider.GetRequiredService<IdentityServerDocumentSessionProvider>()();
 
             bool hasApiResources = identityServerDocumentSession
                 .Query<Mcrio.IdentityServer.On.RavenDb.Storage.Entities.ApiResource>()

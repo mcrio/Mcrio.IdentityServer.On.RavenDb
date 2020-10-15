@@ -14,11 +14,11 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
         ApiResource, Entities.ApiResource, ApiScope, Entities.ApiScope>
     {
         public ResourceStoreExtension(
-            IIdentityServerDocumentSessionWrapper identityServerDocumentSessionWrapper,
+            IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             IIdentityServerStoreMapper mapper,
             ILogger<ResourceStoreExtension<IdentityResource, Entities.IdentityResource, ApiResource,
                 Entities.ApiResource, ApiScope, Entities.ApiScope>> logger)
-            : base(identityServerDocumentSessionWrapper, mapper, logger)
+            : base(identityServerDocumentSessionProvider, mapper, logger)
         {
         }
     }
@@ -34,12 +34,12 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
         where TApiScopeEntity : Entities.ApiScope
     {
         protected ResourceStoreExtension(
-            IIdentityServerDocumentSessionWrapper identityServerDocumentSessionWrapper,
+            IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             IIdentityServerStoreMapper mapper,
             ILogger<ResourceStoreExtension<TIdentityResourceModel, TIdentityResourceEntity,
                 TApiResourceModel, TApiResourceEntity, TApiScopeModel, TApiScopeEntity>> logger)
         {
-            DocumentSession = identityServerDocumentSessionWrapper.Session;
+            DocumentSession = identityServerDocumentSessionProvider();
             Mapper = mapper;
             Logger = logger;
         }

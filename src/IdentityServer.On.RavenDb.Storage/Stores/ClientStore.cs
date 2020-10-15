@@ -11,9 +11,9 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
     public class ClientStore : ClientStore<Client>
     {
         public ClientStore(
-            IIdentityServerDocumentSessionWrapper identityServerDocumentSessionWrapper,
+            IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             IIdentityServerStoreMapper mapper)
-            : base(identityServerDocumentSessionWrapper, mapper)
+            : base(identityServerDocumentSessionProvider, mapper)
         {
         }
     }
@@ -22,10 +22,10 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
         where TClientEntity : Client
     {
         protected ClientStore(
-            IIdentityServerDocumentSessionWrapper identityServerDocumentSessionWrapper,
+            IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             IIdentityServerStoreMapper mapper)
         {
-            DocumentSession = identityServerDocumentSessionWrapper.Session;
+            DocumentSession = identityServerDocumentSessionProvider();
             Mapper = mapper;
         }
 

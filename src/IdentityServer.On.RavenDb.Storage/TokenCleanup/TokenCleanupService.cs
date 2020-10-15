@@ -24,15 +24,15 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.TokenCleanup
         /// <summary>
         /// Initializes a new instance of the <see cref="TokenCleanupService"/> class.
         /// </summary>
-        /// <param name="identityServerDocumentSessionWrapper">Document session wrapper.</param>
+        /// <param name="identityServerDocumentSessionProvider">Document session provider.</param>
         /// <param name="operationalStoreOptions">Options.</param>
         /// <param name="logger">Logger.</param>
         public TokenCleanupService(
-            IIdentityServerDocumentSessionWrapper identityServerDocumentSessionWrapper,
+            IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             IOptionsSnapshot<OperationalStoreOptions> operationalStoreOptions,
             ILogger<TokenCleanupService> logger)
         {
-            _documentSession = identityServerDocumentSessionWrapper.Session;
+            _documentSession = identityServerDocumentSessionProvider();
             _logger = logger;
             _operationalStoreOptions = operationalStoreOptions;
         }

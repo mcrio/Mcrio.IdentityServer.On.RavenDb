@@ -22,11 +22,11 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
     {
         public DeviceFlowStore(
             IPersistentGrantSerializer serializer,
-            IIdentityServerDocumentSessionWrapper identityServerDocumentSessionWrapper,
+            IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             IIdentityServerStoreMapper mapper,
             ILogger<DeviceFlowStore<DeviceFlowCode>> logger,
             IOptionsSnapshot<OperationalStoreOptions> operationalStoreOptions)
-            : base(serializer, identityServerDocumentSessionWrapper, mapper, logger, operationalStoreOptions)
+            : base(serializer, identityServerDocumentSessionProvider, mapper, logger, operationalStoreOptions)
         {
         }
     }
@@ -36,12 +36,12 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
     {
         protected DeviceFlowStore(
             IPersistentGrantSerializer serializer,
-            IIdentityServerDocumentSessionWrapper identityServerDocumentSessionWrapper,
+            IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             IIdentityServerStoreMapper mapper,
             ILogger<DeviceFlowStore<TDeviceFlowCode>> logger,
             IOptionsSnapshot<OperationalStoreOptions> operationalStoreOptions)
         {
-            DocumentSession = identityServerDocumentSessionWrapper.Session;
+            DocumentSession = identityServerDocumentSessionProvider();
             Serializer = serializer;
             Mapper = mapper;
             Logger = logger;

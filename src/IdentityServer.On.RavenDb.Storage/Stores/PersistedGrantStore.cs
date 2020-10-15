@@ -21,11 +21,11 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
     public class PersistedGrantStore : PersistedGrantStore<Entities.PersistedGrant>
     {
         public PersistedGrantStore(
-            IIdentityServerDocumentSessionWrapper identityServerDocumentSessionWrapper,
+            IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             IIdentityServerStoreMapper mapper,
             ILogger<PersistedGrantStore<Entities.PersistedGrant>> logger,
             IOptionsSnapshot<OperationalStoreOptions> operationalStoreOptions)
-            : base(identityServerDocumentSessionWrapper, mapper, logger, operationalStoreOptions)
+            : base(identityServerDocumentSessionProvider, mapper, logger, operationalStoreOptions)
         {
         }
     }
@@ -34,12 +34,12 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
         where TPersistedGrantEntity : Entities.PersistedGrant
     {
         protected PersistedGrantStore(
-            IIdentityServerDocumentSessionWrapper identityServerDocumentSessionWrapper,
+            IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             IIdentityServerStoreMapper mapper,
             ILogger<PersistedGrantStore<TPersistedGrantEntity>> logger,
             IOptionsSnapshot<OperationalStoreOptions> operationalStoreOptions)
         {
-            DocumentSession = identityServerDocumentSessionWrapper.Session;
+            DocumentSession = identityServerDocumentSessionProvider();
             Mapper = mapper;
             Logger = logger;
             OperationalStoreOptions = operationalStoreOptions;

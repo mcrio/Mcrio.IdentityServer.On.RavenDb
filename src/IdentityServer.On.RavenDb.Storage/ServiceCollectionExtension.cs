@@ -8,6 +8,13 @@ using Raven.Client.Documents.Session;
 namespace Mcrio.IdentityServer.On.RavenDb.Storage
 {
     /// <summary>
+    /// Locates the RavenDb document session service.
+    /// </summary>
+    /// <param name="serviceProvider">Service provider.</param>
+    /// <returns>Instance of <see cref="IAsyncDocumentSession"/>.</returns>
+    public delegate IAsyncDocumentSession IdentityServerDocumentSessionServiceLocator(IServiceProvider serviceProvider);
+
+    /// <summary>
     /// Provides extension methods for registering required services to the DI container.
     /// </summary>
     public static class IdentityServerRavenDbServiceCollectionExtension
@@ -16,20 +23,20 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage
         /// Register services.
         /// </summary>
         /// <param name="serviceCollection">Service collection.</param>
-        /// <param name="documentSessionProvider">RavenDb document session provider.</param>
+        /// <param name="documentSessionServiceLocator">RavenDb document session service locator.</param>
         /// <returns>Same service collection the extension method is applied on.</returns>
         public static IServiceCollection IdentityServerAddRavenDbServices(
             this IServiceCollection serviceCollection,
-            Func<IServiceProvider, IAsyncDocumentSession> documentSessionProvider)
+            IdentityServerDocumentSessionServiceLocator documentSessionServiceLocator)
         {
-            if (documentSessionProvider == null)
+            if (documentSessionServiceLocator == null)
             {
-                throw new ArgumentNullException(nameof(documentSessionProvider));
+                throw new ArgumentNullException(nameof(documentSessionServiceLocator));
             }
 
             // Identity server related Ravendb document session wrapper
-            serviceCollection.TryAddScoped<IIdentityServerDocumentSessionWrapper>(
-                provider => new IdentityServerDocumentSessionWrapper(documentSessionProvider(provider))
+            serviceCollection.TryAddScoped<IdentityServerDocumentSessionProvider>(
+                provider => () => documentSessionServiceLocator(provider)
             );
 
             // Register singleton mapper
