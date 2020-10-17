@@ -11,7 +11,7 @@ services:
   # RavenDB
   ravendb:
     <<: *logging-defaults
-    image: ravendb/ravendb:5.0-ubuntu-latest
+    image: ravendb/ravendb:5.0.3-ubuntu.18.04-x64
     ports:
       - 32779:8080
       # - 38888:38888

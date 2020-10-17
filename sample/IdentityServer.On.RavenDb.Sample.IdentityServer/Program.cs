@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Raven.Client.Documents;
 using Raven.Client.Documents.Session;
 
@@ -38,6 +39,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
             UserManager<RavenIdentityUser> userManager =
                 scope.ServiceProvider.GetRequiredService<UserManager<RavenIdentityUser>>();
 
+            ILogger<Program> logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
             try
             {
                 userManager.CreateAsync(
@@ -47,7 +50,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
             }
             catch (Exception ex)
             {
-                //
+                logger.LogError(ex, "Error creating user `bob`. {}", ex.Message);
             }
             
             try
@@ -59,7 +62,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
             }
             catch (Exception ex)
             {
-                //
+                logger.LogError(ex, "Error creating user `alice`. {}", ex.Message);
             }
         }
 
