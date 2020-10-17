@@ -122,7 +122,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
 
             var grants = new List<PersistedGrant>();
 
-            Raven.Client.Util.IAsyncEnumerator<StreamResult<TPersistedGrantEntity>>? grantStreamResult =
+            IAsyncEnumerator<StreamResult<TPersistedGrantEntity>>? grantStreamResult =
                 await DocumentSession.Advanced
                     .StreamAsync(query)
                     .ConfigureAwait(false);

@@ -159,7 +159,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             IRavenQueryable<TApiResourceEntity> apiResourceQuery = DocumentSession.Query<TApiResourceEntity>();
             IRavenQueryable<TApiScopeEntity> apiScopesQuery = DocumentSession.Query<TApiScopeEntity>();
 
-            Raven.Client.Util.IAsyncEnumerator<StreamResult<TIdentityResourceEntity>> identityStreamResult =
+            IAsyncEnumerator<StreamResult<TIdentityResourceEntity>>? identityStreamResult =
                 await DocumentSession
                     .Advanced
                     .StreamAsync(identityResourcesQuery)
@@ -172,7 +172,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                 );
             }
 
-            Raven.Client.Util.IAsyncEnumerator<StreamResult<TApiResourceEntity>> apiResourceStreamResult =
+            IAsyncEnumerator<StreamResult<TApiResourceEntity>> apiResourceStreamResult =
                 await DocumentSession
                     .Advanced
                     .StreamAsync(apiResourceQuery)
@@ -185,7 +185,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                 );
             }
 
-            Raven.Client.Util.IAsyncEnumerator<StreamResult<TApiScopeEntity>> apiScopeStreamResult =
+            IAsyncEnumerator<StreamResult<TApiScopeEntity>> apiScopeStreamResult =
                 await DocumentSession
                     .Advanced
                     .StreamAsync(apiScopesQuery)

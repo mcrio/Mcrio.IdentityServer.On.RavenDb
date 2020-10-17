@@ -17,7 +17,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Extensions
         internal static string GetCollectionPrefixWithSeparator(this IDocumentStore documentStore, Type entityType)
         {
             string prefix = GetCollectionPrefix(documentStore, entityType);
-            string separator = documentStore
+            char separator = documentStore
                 .Conventions
                 .IdentityPartsSeparator;
             return $"{prefix}{separator}";

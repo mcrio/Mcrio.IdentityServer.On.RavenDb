@@ -17,7 +17,7 @@
         <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0" />
         <PackageReference Include="coverlet.collector" Version="1.2.0" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.6" />
-        <PackageReference Include="RavenDB.TestDriver" Version="4.2.103" />
+        <PackageReference Include="RavenDB.TestDriver" Version="5.0.3" />
         <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" />
         <PackageReference Include="FluentAssertions" Version="5.10.3" />
         <PackageReference Include="Moq" Version="4.14.5" />
