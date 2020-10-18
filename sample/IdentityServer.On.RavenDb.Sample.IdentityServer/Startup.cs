@@ -94,6 +94,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
                 .AddIdentityServer()
                 .AddRavenDbStores(
                     serviceProvider => serviceProvider.GetRequiredService<IAsyncDocumentSession>(),
+                    serviceProvider => serviceProvider.GetRequiredService<IDocumentStore>(),
                     operationalStoreOptions => Configuration
                         .GetSection("OperationalStoreOptions")
                         .Bind(operationalStoreOptions),

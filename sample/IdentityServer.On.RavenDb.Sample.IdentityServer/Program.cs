@@ -33,9 +33,6 @@ namespace Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer
         {
             using IServiceScope scope = host.Services.CreateScope();
 
-            IAsyncDocumentSession identityDocumentSession =
-                scope.ServiceProvider.GetRequiredService<IdentityServerDocumentSessionProvider>()();
-
             UserManager<RavenIdentityUser> userManager =
                 scope.ServiceProvider.GetRequiredService<UserManager<RavenIdentityUser>>();
 

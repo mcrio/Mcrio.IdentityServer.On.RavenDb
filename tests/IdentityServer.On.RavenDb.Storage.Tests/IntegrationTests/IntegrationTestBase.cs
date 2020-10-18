@@ -53,7 +53,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests
 
             // Identity server ravendb related services
             serviceCollection.IdentityServerAddRavenDbServices(
-                provider => provider.GetRequiredService<IAsyncDocumentSession>()
+                provider => provider.GetRequiredService<IAsyncDocumentSession>(),
+                provider => provider.GetRequiredService<IDocumentStore>()
             );
 
             // Identity Server operational services

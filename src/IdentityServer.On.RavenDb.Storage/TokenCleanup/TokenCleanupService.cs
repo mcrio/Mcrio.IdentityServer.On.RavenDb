@@ -1,14 +1,14 @@
 using System;
 using System.Threading.Tasks;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Entities;
+using Mcrio.IdentityServer.On.RavenDb.Storage.Extensions;
 using Mcrio.IdentityServer.On.RavenDb.Storage.RavenDb;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Raven.Client;
 using Raven.Client.Documents;
-using Raven.Client.Documents.Linq;
 using Raven.Client.Documents.Operations;
 using Raven.Client.Documents.Queries;
-using Raven.Client.Documents.Session;
 
 namespace Mcrio.IdentityServer.On.RavenDb.Storage.TokenCleanup
 {
@@ -17,22 +17,22 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.TokenCleanup
     /// </summary>
     public class TokenCleanupService : ITokenCleanupService
     {
-        private readonly IAsyncDocumentSession _documentSession;
+        private readonly IDocumentStore _documentStore;
         private readonly ILogger<TokenCleanupService> _logger;
         private readonly IOptionsSnapshot<OperationalStoreOptions> _operationalStoreOptions;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TokenCleanupService"/> class.
         /// </summary>
-        /// <param name="identityServerDocumentSessionProvider">Document session provider.</param>
+        /// <param name="identityServerDocumentStoreProvider">Document store provider.</param>
         /// <param name="operationalStoreOptions">Options.</param>
         /// <param name="logger">Logger.</param>
         public TokenCleanupService(
-            IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
+            IdentityServerDocumentStoreProvider identityServerDocumentStoreProvider,
             IOptionsSnapshot<OperationalStoreOptions> operationalStoreOptions,
             ILogger<TokenCleanupService> logger)
         {
-            _documentSession = identityServerDocumentSessionProvider();
+            _documentStore = identityServerDocumentStoreProvider();
             _logger = logger;
             _operationalStoreOptions = operationalStoreOptions;
         }
@@ -55,7 +55,10 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.TokenCleanup
             }
             catch (Exception ex)
             {
-                _logger.LogError("TokenCleanupService exception removing expired device codes: {exception}", ex.Message);
+                _logger.LogError(
+                    "TokenCleanupService exception removing expired device codes: {exception}",
+                    ex.Message
+                );
             }
         }
 
@@ -69,10 +72,16 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.TokenCleanup
              * Note: For performance reasons we won't implement the IOperationalStoreNotification that is
              * done on the EF core side. Purpose of it was to make a notification about every single deletion.
              */
-            IRavenQueryable<DeviceFlowCode> query = _documentSession
-                .Query<DeviceFlowCode>()
-                .Where(deviceFlowCode => deviceFlowCode.Expiration < DateTime.UtcNow);
-            return PerformDeleteOperation(query);
+            var query = new IndexQuery
+            {
+                Query =
+                    $"from {_documentStore.GetCollectionName(typeof(DeviceFlowCode))} where {nameof(DeviceFlowCode.Expiration)} < $utcNow",
+                QueryParameters = new Parameters
+                {
+                    { "utcNow", DateTime.UtcNow },
+                },
+            };
+            return PerformDeleteOperation(query, typeof(DeviceFlowCode));
         }
 
         /// <summary>
@@ -85,21 +94,31 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.TokenCleanup
              * Note: For performance reasons we won't implement the IOperationalStoreNotification that is
              * done on the EF core side. Purpose of it was to make a notification about every single deletion.
              */
-            IRavenQueryable<PersistedGrant> query = _documentSession
-                .Query<PersistedGrant>()
-                .Where(grant => grant.Expiration < DateTime.UtcNow);
-            return PerformDeleteOperation(query);
+            var query = new IndexQuery
+            {
+                Query =
+                    $"from {_documentStore.GetCollectionName(typeof(PersistedGrant))} where {nameof(PersistedGrant.Expiration)} < $utcNow",
+                QueryParameters = new Parameters
+                {
+                    { "utcNow", DateTime.UtcNow },
+                },
+            };
+            return PerformDeleteOperation(query, typeof(PersistedGrant));
         }
 
-        private async Task PerformDeleteOperation<TEntity>(IRavenQueryable<TEntity> query)
+        private async Task PerformDeleteOperation(IndexQuery query, Type entityType)
         {
             const int deleteOperationTimeoutSec = 30;
             try
             {
-                int? deleteByQueryMaxOperations = _operationalStoreOptions.Value.TokenCleanup.DeleteByQueryMaxOperationsPerSecond;
-                Operation operation = await _documentSession.Advanced.DocumentStore.Operations.SendAsync(
+                int? deleteByQueryMaxOperations = _operationalStoreOptions
+                    .Value
+                    .TokenCleanup
+                    .DeleteByQueryMaxOperationsPerSecond;
+
+                Operation operation = await _documentStore.Operations.SendAsync(
                     new DeleteByQueryOperation(
-                        query.ToAsyncDocumentQuery().GetIndexQuery(),
+                        query,
                         new QueryOperationOptions
                         {
                             MaxOpsPerSecond = deleteByQueryMaxOperations,
@@ -113,7 +132,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.TokenCleanup
             {
                 _logger.LogWarning(
                     "TokenCleanupService remove expired grants of type {} operation took more than {} seconds.",
-                    typeof(TEntity).ToString(),
+                    entityType.ToString(),
                     deleteOperationTimeoutSec
                 );
             }

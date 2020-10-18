@@ -5,9 +5,14 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Extensions
 {
     internal static class DocumentStoreExtension
     {
+        internal static string GetCollectionName(this IDocumentStore documentStore, Type entityType)
+        {
+            return documentStore.Conventions.GetCollectionName(entityType);
+        }
+
         internal static string GetCollectionPrefix(this IDocumentStore documentStore, Type entityType)
         {
-            string collectionName = documentStore.Conventions.GetCollectionName(entityType);
+            string collectionName = GetCollectionName(documentStore, entityType);
             string prefix = documentStore
                 .Conventions
                 .TransformTypeCollectionNameToDocumentIdPrefix(collectionName);

@@ -21,6 +21,7 @@ namespace Mcrio.IdentityServer.On.RavenDb
         public static IIdentityServerBuilder AddRavenDbStores(
             this IIdentityServerBuilder builder,
             IdentityServerDocumentSessionServiceLocator documentSessionServiceLocator,
+            IdentityServerDocumentStoreServiceLocator documentStoreServiceLocator,
             Action<OperationalStoreOptions>? operationalStoreOptions = null,
             bool addConfigurationStore = true,
             bool addConfigurationStoreCache = true,
@@ -30,6 +31,7 @@ namespace Mcrio.IdentityServer.On.RavenDb
                 Storage.Entities.DeviceFlowCode, DeviceFlowStore>(
                 builder,
                 documentSessionServiceLocator,
+                documentStoreServiceLocator,
                 operationalStoreOptions,
                 addConfigurationStore,
                 addConfigurationStoreCache,
@@ -41,6 +43,7 @@ namespace Mcrio.IdentityServer.On.RavenDb
             TDeviceFlowCode, TDeviceFlowStore>(
             this IIdentityServerBuilder builder,
             IdentityServerDocumentSessionServiceLocator documentSessionServiceLocator,
+            IdentityServerDocumentStoreServiceLocator documentStoreServiceLocator,
             Action<OperationalStoreOptions>? operationalStoreOptions = null,
             bool addConfigurationStore = true,
             bool addConfigurationStoreCache = true,
@@ -57,6 +60,7 @@ namespace Mcrio.IdentityServer.On.RavenDb
                 ApiScope, Storage.Entities.ApiScope, TPersistedGrantEntity, TDeviceFlowCode>(
                 builder,
                 documentSessionServiceLocator,
+                documentStoreServiceLocator,
                 operationalStoreOptions,
                 addConfigurationStore,
                 addConfigurationStoreCache,
@@ -75,6 +79,7 @@ namespace Mcrio.IdentityServer.On.RavenDb
             TApiScope, TApiScopeEntity, TPersistedGrantEntity, TDeviceFlowCode>(
             this IIdentityServerBuilder builder,
             IdentityServerDocumentSessionServiceLocator documentSessionServiceLocator,
+            IdentityServerDocumentStoreServiceLocator documentStoreServiceLocator,
             Action<OperationalStoreOptions>? operationalStoreOptions = null,
             bool addConfigurationStore = true,
             bool addConfigurationStoreCache = true,
@@ -110,7 +115,10 @@ namespace Mcrio.IdentityServer.On.RavenDb
                 throw new ArgumentNullException(nameof(documentSessionServiceLocator));
             }
 
-            builder.Services.IdentityServerAddRavenDbServices(documentSessionServiceLocator);
+            builder.Services.IdentityServerAddRavenDbServices(
+                documentSessionServiceLocator,
+                documentStoreServiceLocator
+            );
 
             if (addConfigurationStore)
             {
