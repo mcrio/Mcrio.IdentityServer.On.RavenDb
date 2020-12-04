@@ -499,6 +499,55 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             }
         }
 
+        [Fact]
+        public async Task ShouldNotUpdatePersistedGrantIfEntityUpdatedFromAnotherSession()
+        {
+            PersistedGrant persistedGrant = CreateTestObject();
+            PersistedGrant persistedGrant2 = CreateTestObject();
+            persistedGrant2.ConsumedTime = null;
+            await InitializeServices().PersistedGrantStore.StoreAsync(persistedGrant);
+            await InitializeServices().PersistedGrantStore.StoreAsync(persistedGrant2);
+
+            DateTime? originalConsumedTime = persistedGrant.ConsumedTime;
+
+            ServiceScope scope1 = InitializeServices();
+            ServiceScope scope2 = InitializeServices();
+
+            // have 2 grants retrieved in scope 1
+            PersistedGrant? grantFromScope1 = await scope1.PersistedGrantStore.GetAsync(persistedGrant.Key);
+            grantFromScope1.Should().NotBeNull();
+            PersistedGrant? grant2FromScope1 = await scope1.PersistedGrantStore.GetAsync(persistedGrant2.Key);
+
+            // retrieve 1 grant in scope
+            PersistedGrant? grantFromScope2 = await scope2.PersistedGrantStore.GetAsync(persistedGrant.Key);
+            grantFromScope2.Should().NotBeNull();
+
+            // modify scope2
+            DateTime newConsumedTime = DateTime.Now;
+            grantFromScope2.ConsumedTime = newConsumedTime;
+            await scope2.PersistedGrantStore.StoreAsync(grantFromScope2);
+
+            // try modifying data from scope1.
+            grantFromScope1.ConsumedTime = DateTime.Now.Subtract(TimeSpan.FromHours(3));
+            grant2FromScope1.ConsumedTime = DateTime.Now;
+            await scope1.PersistedGrantStore.StoreAsync(grantFromScope1); // will call saveChanges
+
+            // make sure data modifications from scope1 are not saved due to concurrency
+            ServiceScope scope3 = InitializeServices();
+            PersistedGrant? updatedGrant = await scope3.PersistedGrantStore.GetAsync(persistedGrant.Key);
+            updatedGrant.Should().NotBeNull();
+            updatedGrant.ConsumedTime.Should().Be(newConsumedTime);
+            updatedGrant.ConsumedTime.Should().NotBe(grantFromScope1.ConsumedTime.Value);
+            if (originalConsumedTime != null)
+            {
+                updatedGrant.ConsumedTime.Should().NotBe(originalConsumedTime.Value);
+            }
+
+            PersistedGrant? grant2RetrievedAgain = await scope3.PersistedGrantStore.GetAsync(persistedGrant2.Key);
+            grant2RetrievedAgain.Should().NotBeNull();
+            grant2RetrievedAgain.ConsumedTime.Should().BeNull();
+        }
+
         private static PersistedGrant CreateTestObject(
             string sub = null,
             string clientId = null,
