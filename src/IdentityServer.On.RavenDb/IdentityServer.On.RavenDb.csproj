@@ -1,8 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>netcoreapp3.1</TargetFramework>
-        <LangVersion>8</LangVersion>
+        <TargetFramework>net5.0</TargetFramework>
         <Nullable>enable</Nullable>
         <CodeAnalysisRuleSet>..\..\codestyle.ruleset</CodeAnalysisRuleSet>
         <RootNamespace>Mcrio.IdentityServer.On.RavenDb</RootNamespace>
@@ -24,11 +23,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IdentityServer.On.RavenDb.Storage\IdentityServer.On.RavenDb.Storage.csproj"/>
+        <ProjectReference Include="..\IdentityServer.On.RavenDb.Storage\IdentityServer.On.RavenDb.Storage.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="IdentityServer4" Version="4.0.4"/>
+        <PackageReference Include="IdentityServer4" Version="4.1.1" />
         <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>

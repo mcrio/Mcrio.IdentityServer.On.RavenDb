@@ -1,17 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
-        <TargetFramework>netcoreapp3.1</TargetFramework>
-        <LangVersion>8</LangVersion>
+        <TargetFramework>net5.0</TargetFramework>
         <Nullable>enable</Nullable>
         <AssemblyName>Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer</AssemblyName>
         <RootNamespace>Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="IdentityServer4.AspNetIdentity" Version="4.0.4" />
-      <PackageReference Include="Mcrio.AspNetCore.Identity.On.RavenDb" Version="0.0.1-20201017-1304" />
-      <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="3.1.9" />
+      <PackageReference Include="IdentityServer4.AspNetIdentity" Version="4.1.1" />
+      <PackageReference Include="Mcrio.AspNetCore.Identity.On.RavenDb" Version="0.0.1-20201212-0859" />
+      <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="5.0.1" />
     </ItemGroup>
 
     <ItemGroup>
