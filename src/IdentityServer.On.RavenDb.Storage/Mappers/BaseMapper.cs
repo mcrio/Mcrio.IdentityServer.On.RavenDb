@@ -18,7 +18,10 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Mappers
             get
             {
                 return _mapper ??= new Mapper(
-                    new MapperConfiguration(expression => { expression.AddProfiles(GetMapperProfiles()); })
+                    new MapperConfiguration(expression =>
+                    {
+                        expression.AddProfiles(GetMapperProfiles());
+                    })
                 );
             }
         }
@@ -31,6 +34,14 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Mappers
             where TProfile : Profile
         {
             Mapper.ConfigurationProvider.AssertConfigurationIsValid(typeof(TProfile).FullName);
+        }
+
+        /// <summary>
+        /// Assert configuration.
+        /// </summary>
+        public void AssertConfigurationIsValid()
+        {
+            Mapper.ConfigurationProvider.AssertConfigurationIsValid();
         }
 
         /// <summary>

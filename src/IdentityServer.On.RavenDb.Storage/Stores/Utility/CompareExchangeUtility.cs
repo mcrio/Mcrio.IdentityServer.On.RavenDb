@@ -105,7 +105,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Utility
         {
             return reservationType switch
             {
-                ReservationType.DeviceCode => "identityserver/devicecode",
+                ReservationType.DeviceCode => "idsrv/devcode",
                 _ => throw new Exception($"Unhandled reservation type {reservationType}")
             };
         }

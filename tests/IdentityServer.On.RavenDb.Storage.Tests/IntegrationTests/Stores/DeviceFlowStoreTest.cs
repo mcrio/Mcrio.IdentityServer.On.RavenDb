@@ -47,7 +47,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             }
 
             await AssertCompareExchangeKeyExistsWithValueAsync(
-                $"identityserver/devicecode/{deviceCode}",
+                $"idsrv/devcode/{deviceCode}",
                 InitializeServices().Mapper.CreateEntityId<DeviceFlowCode>(userCode),
                 "device code should be unique so we store it in the RavenDb compare exchange."
             );
@@ -84,7 +84,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             }
 
             await AssertCompareExchangeKeyExistsWithValueAsync(
-                $"identityserver/devicecode/{deviceCode}",
+                $"idsrv/devcode/{deviceCode}",
                 InitializeServices().Mapper.CreateEntityId<DeviceFlowCode>(userCode),
                 "device code should be unique so we store it in the RavenDb compare exchange."
             );
@@ -165,7 +165,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             await addDuplicate.Should().ThrowAsync<DuplicateException>();
 
             await AssertCompareExchangeKeyExistsWithValueAsync(
-                $"identityserver/devicecode/{existingDeviceCode}",
+                $"idsrv/devcode/{existingDeviceCode}",
                 InitializeServices().Mapper.CreateEntityId<DeviceFlowCode>(firstDeviceUserCode),
                 "device code should exist as it was reserved by the first device"
             );
@@ -357,7 +357,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
             );
 
             await AssertCompareExchangeKeyExistsWithValueAsync(
-                $"identityserver/devicecode/{testDeviceCode}",
+                $"idsrv/devcode/{testDeviceCode}",
                 InitializeServices().Mapper.CreateEntityId<Entities.DeviceFlowCode>(testUserCode)
             );
 

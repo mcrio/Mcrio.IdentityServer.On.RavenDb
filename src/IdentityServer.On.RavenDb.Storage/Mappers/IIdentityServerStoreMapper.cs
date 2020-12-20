@@ -7,6 +7,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Mappers
     {
         void Map<TSource, TDestination>(TSource source, TDestination destination);
 
+        void AssertConfigurationIsValid();
+
         void AssertConfigurationIsValid<TProfile>()
             where TProfile : Profile;
 
