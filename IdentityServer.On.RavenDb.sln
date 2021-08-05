@@ -1,8 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityServer.On.RavenDb.Storage", "src\IdentityServer.On.RavenDb.Storage\IdentityServer.On.RavenDb.Storage.csproj", "{2723EA19-5DA6-4D43-8A68-51FFECBBBEE5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mcrio.IdentityServer.On.RavenDb.Storage", "src\Mcrio.IdentityServer.On.RavenDb.Storage\Mcrio.IdentityServer.On.RavenDb.Storage.csproj", "{2723EA19-5DA6-4D43-8A68-51FFECBBBEE5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityServer.On.RavenDb.Sample.IdentityServer", "sample\IdentityServer.On.RavenDb.Sample.IdentityServer\IdentityServer.On.RavenDb.Sample.IdentityServer.csproj", "{A1AD2719-3613-44B0-A319-1C60486B9DEF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer", "sample\Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer\Mcrio.IdentityServer.On.RavenDb.Sample.IdentityServer.csproj", "{A1AD2719-3613-44B0-A319-1C60486B9DEF}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{9FF573FB-9081-4D05-A2D5-12CA6498CCF9}"
 EndProject
@@ -10,17 +10,17 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sample", "sample", "{407271
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{83712703-E639-47BD-AFDB-79C7CBB6486E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityServer.On.RavenDb.Storage.Tests", "tests\IdentityServer.On.RavenDb.Storage.Tests\IdentityServer.On.RavenDb.Storage.Tests.csproj", "{BB9C3622-1B47-463A-966F-0C89A069EBBB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mcrio.IdentityServer.On.RavenDb.Storage.Tests", "tests\Mcrio.IdentityServer.On.RavenDb.Storage.Tests\Mcrio.IdentityServer.On.RavenDb.Storage.Tests.csproj", "{BB9C3622-1B47-463A-966F-0C89A069EBBB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityServer.On.RavenDb", "src\IdentityServer.On.RavenDb\IdentityServer.On.RavenDb.csproj", "{B7ADAF51-4387-4CE5-A7C9-2C1D1C79ABD6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mcrio.IdentityServer.On.RavenDb", "src\Mcrio.IdentityServer.On.RavenDb\Mcrio.IdentityServer.On.RavenDb.csproj", "{B7ADAF51-4387-4CE5-A7C9-2C1D1C79ABD6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityServer.On.RavenDb.Sample.MyApi", "sample\IdentityServer.On.RavenDb.Sample.MyApi\IdentityServer.On.RavenDb.Sample.MyApi.csproj", "{D6B189C7-AA53-4ACD-9786-47AF889B94A5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mcrio.IdentityServer.On.RavenDb.Sample.MyApi", "sample\Mcrio.IdentityServer.On.RavenDb.Sample.MyApi\Mcrio.IdentityServer.On.RavenDb.Sample.MyApi.csproj", "{D6B189C7-AA53-4ACD-9786-47AF889B94A5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityServer.On.RavenDb.Sample.ConsoleClient", "sample\IdentityServer.On.RavenDb.Sample.ConsoleClient\IdentityServer.On.RavenDb.Sample.ConsoleClient.csproj", "{7B65ABA7-8155-47F2-B572-BA71ED49DA6C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mcrio.IdentityServer.On.RavenDb.Sample.ConsoleClient", "sample\Mcrio.IdentityServer.On.RavenDb.Sample.ConsoleClient\Mcrio.IdentityServer.On.RavenDb.Sample.ConsoleClient.csproj", "{7B65ABA7-8155-47F2-B572-BA71ED49DA6C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityServer.On.RavenDb.Sample.MvcClient", "sample\IdentityServer.On.RavenDb.Sample.MvcClient\IdentityServer.On.RavenDb.Sample.MvcClient.csproj", "{1BCEA592-F4D6-44C8-81BF-D2B837F29291}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mcrio.IdentityServer.On.RavenDb.Sample.MvcClient", "sample\Mcrio.IdentityServer.On.RavenDb.Sample.MvcClient\Mcrio.IdentityServer.On.RavenDb.Sample.MvcClient.csproj", "{1BCEA592-F4D6-44C8-81BF-D2B837F29291}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityServer.On.RavenDb.Sample.DeviceFlowClient", "sample\IdentityServer.On.RavenDb.Sample.DeviceFlowClient\IdentityServer.On.RavenDb.Sample.DeviceFlowClient.csproj", "{FAFF759D-8C9A-42E1-A9E2-F5B146C4412B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mcrio.IdentityServer.On.RavenDb.Sample.DeviceFlowClient", "sample\Mcrio.IdentityServer.On.RavenDb.Sample.DeviceFlowClient\Mcrio.IdentityServer.On.RavenDb.Sample.DeviceFlowClient.csproj", "{FAFF759D-8C9A-42E1-A9E2-F5B146C4412B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

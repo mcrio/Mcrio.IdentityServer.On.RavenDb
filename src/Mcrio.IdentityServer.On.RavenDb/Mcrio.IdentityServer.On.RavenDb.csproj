@@ -23,7 +23,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IdentityServer.On.RavenDb.Storage\IdentityServer.On.RavenDb.Storage.csproj" />
+        <ProjectReference Include="..\Mcrio.IdentityServer.On.RavenDb.Storage\Mcrio.IdentityServer.On.RavenDb.Storage.csproj" />
     </ItemGroup>
 
     <ItemGroup>
