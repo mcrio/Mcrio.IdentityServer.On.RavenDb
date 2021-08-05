@@ -112,8 +112,8 @@ Add the following configuration to `appsettings.json`:
         /* If true sets expires metadata so that we can use RavenDB auto cleanup functionality for expired documents */
         "SetRavenDbDocumentExpiresMetadata": true,
         "TokenCleanup": {
-            /* If true enabled token cleanup background server */
-            /* Suggested way is to set to false and to go with the RavenDB auto cleanup of expired documents */
+            /* If true enables token cleanup background service */
+            /* Suggested way is to false and to go with the RavenDB auto cleanup of expired documents */
             "EnableTokenCleanupBackgroundService": false,
             "CleanupIntervalSec": 60,
             "CleanupStartupDelaySec": 30,
