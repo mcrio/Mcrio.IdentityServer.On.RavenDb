@@ -6,7 +6,9 @@
         <CodeAnalysisRuleSet>..\..\codestyle.ruleset</CodeAnalysisRuleSet>
         <RootNamespace>Mcrio.IdentityServer.On.RavenDb</RootNamespace>
         <PackageId>Mcrio.IdentityServer.On.RavenDb</PackageId>
-        <Description>RavenDB implementations of the IdentityServer4 stores.</Description>
+        <Description>RavenDB implementations of the IdentityServer4 stores.
+            Extension methods for easy configuration of RavenDB IdentityServer4 Stores with IdentityServer4.
+        </Description>
         <Authors>Nikola Josipović</Authors>
         <Company>https://github.com/mcrio</Company>
         <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
@@ -23,11 +25,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Mcrio.IdentityServer.On.RavenDb.Storage\Mcrio.IdentityServer.On.RavenDb.Storage.csproj" />
+        <ProjectReference Include="..\Mcrio.IdentityServer.On.RavenDb.Storage\Mcrio.IdentityServer.On.RavenDb.Storage.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="IdentityServer4" Version="4.1.2" />
+        <PackageReference Include="IdentityServer4" Version="4.1.2"/>
         <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
