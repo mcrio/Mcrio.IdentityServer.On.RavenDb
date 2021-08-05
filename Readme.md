@@ -3,6 +3,10 @@
 
 # IdentityServer4 on RavenDB
 
+[![Build status](https://dev.azure.com/midnight-creative/Mcrio.IdentityServer.On.RavenDb/_apis/build/status/Build)](https://dev.azure.com/midnight-creative/Mcrio.IdentityServer.On.RavenDb/_build/latest?definitionId=-1)
+![Nuget](https://img.shields.io/nuget/v/Mcrio.IdentityServer.On.RavenDb)
+![Nuget](https://img.shields.io/nuget/v/Mcrio.IdentityServer.On.RavenDb.Storage)
+
 A RavenDB copy of the original EntityFramework IdentityServer4 store implementations.
 Use RavenDB to store IdentityServer4 related entities.
 Covers most of the tests implemented by the official EntityFramework stores.
