@@ -12,11 +12,9 @@
         <Authors>Nikola Josipović</Authors>
         <Company>https://github.com/mcrio</Company>
         <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
-        <!--        todo: github url below -->
-        <RepositoryUrl>https://github.com/mcrio/</RepositoryUrl>
+        <RepositoryUrl>https://github.com/mcrio/Mcrio.IdentityServer.On.RavenDb</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
-        <!--        todo: github url below -->
-        <PackageProjectUrl>https://github.com/mcrio/</PackageProjectUrl>
+        <PackageProjectUrl>https://github.com/mcrio/Mcrio.IdentityServer.On.RavenDb</PackageProjectUrl>
         <PackageTags>identityserver ravendb;indentityserver4;identityserver4 ravendb;ravendb;</PackageTags>
 
         <Version Condition="'$(RELEASE_VERSION)' != ''">$(RELEASE_VERSION)</Version>

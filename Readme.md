@@ -1,5 +1,5 @@
-<img src="./ravendb-logo.png" height="100px" alt="RavenDB" />
-<img src="./identity-server-logo.png" height="100px" alt="asp net core" />
+<img src="https://github.com/mcrio/Mcrio.IdentityServer.On.RavenDb/raw/master/ravendb-logo.png" height="100px" alt="RavenDB" />
+<img src="https://github.com/mcrio/Mcrio.IdentityServer.On.RavenDb/raw/master/identity-server-logo.pngg" height="150px" alt="IdentityServer4" />
 
 # IdentityServer4 on RavenDB
 
