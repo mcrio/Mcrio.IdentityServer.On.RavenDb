@@ -9,8 +9,14 @@ using Raven.Client.Documents.Session;
 
 namespace Mcrio.IdentityServer.On.RavenDb.Storage.Cors
 {
+    /// <inheritdoc />
     public class CorsPolicyService : CorsPolicyService<Entities.Client>
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CorsPolicyService"/> class.
+        /// </summary>
+        /// <param name="identityServerDocumentSessionProvider">Document session provider.</param>
+        /// <param name="logger">Logger.</param>
         public CorsPolicyService(
             IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             ILogger<CorsPolicyService> logger)
@@ -19,12 +25,18 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Cors
         }
     }
 
+    /// <inheritdoc />
     public abstract class CorsPolicyService<TClientEntity> : ICorsPolicyService
         where TClientEntity : Entities.Client
     {
         private readonly IAsyncDocumentSession _documentSession;
         private readonly ILogger<CorsPolicyService<TClientEntity>> _logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CorsPolicyService{TClientEntity}"/> class.
+        /// </summary>
+        /// <param name="identityServerDocumentSessionProvider">Document session provider.</param>
+        /// <param name="logger">Logger.</param>
         public CorsPolicyService(
             IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             ILogger<CorsPolicyService<TClientEntity>> logger)
@@ -49,7 +61,11 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Cors
                 .AnyAsync()
                 .ConfigureAwait(false);
 
-            _logger.LogDebug("Origin {origin} is allowed: {originAllowed}", origin, isAllowed);
+            _logger.LogDebug(
+                "Origin {Origin} is allowed: {OriginAllowed}",
+                origin,
+                isAllowed
+            );
 
             return isAllowed;
         }

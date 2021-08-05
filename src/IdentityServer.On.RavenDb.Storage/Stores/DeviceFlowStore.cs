@@ -18,22 +18,40 @@ using ConcurrencyException = Raven.Client.Exceptions.ConcurrencyException;
 
 namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
 {
+    /// <inheritdoc />
     public class DeviceFlowStore : DeviceFlowStore<DeviceFlowCode>
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DeviceFlowStore"/> class.
+        /// </summary>
+        /// <param name="serializer"></param>
+        /// <param name="identityServerDocumentSessionProvider"></param>
+        /// <param name="mapper"></param>
+        /// <param name="logger"></param>
+        /// <param name="operationalStoreOptions"></param>
         public DeviceFlowStore(
             IPersistentGrantSerializer serializer,
             IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             IIdentityServerStoreMapper mapper,
-            ILogger<DeviceFlowStore<DeviceFlowCode>> logger,
+            ILogger<DeviceFlowStore> logger,
             IOptionsSnapshot<OperationalStoreOptions> operationalStoreOptions)
             : base(serializer, identityServerDocumentSessionProvider, mapper, logger, operationalStoreOptions)
         {
         }
     }
 
+    /// <inheritdoc />
     public abstract class DeviceFlowStore<TDeviceFlowCode> : IDeviceFlowStore
         where TDeviceFlowCode : DeviceFlowCode, new()
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DeviceFlowStore{TDeviceFlowCode}"/> class.
+        /// </summary>
+        /// <param name="serializer"></param>
+        /// <param name="identityServerDocumentSessionProvider"></param>
+        /// <param name="mapper"></param>
+        /// <param name="logger"></param>
+        /// <param name="operationalStoreOptions"></param>
         protected DeviceFlowStore(
             IPersistentGrantSerializer serializer,
             IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
@@ -48,14 +66,29 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             OperationalStoreOptions = operationalStoreOptions;
         }
 
+        /// <summary>
+        /// Gets the document session.
+        /// </summary>
         protected IAsyncDocumentSession DocumentSession { get; }
 
+        /// <summary>
+        /// Gets the persisted grant serializer.
+        /// </summary>
         protected IPersistentGrantSerializer Serializer { get; }
 
+        /// <summary>
+        /// Gets the mapper.
+        /// </summary>
         protected IIdentityServerStoreMapper Mapper { get; }
 
+        /// <summary>
+        /// Gets the logger.
+        /// </summary>
         protected ILogger<DeviceFlowStore<TDeviceFlowCode>> Logger { get; }
 
+        /// <summary>
+        /// Gets the operational store options.
+        /// </summary>
         protected IOptionsSnapshot<OperationalStoreOptions> OperationalStoreOptions { get; }
 
         /// <summary>
@@ -90,80 +123,6 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
 
             return StoreDeviceAuthorizationAsync(deviceFlowCodeEntity);
-        }
-
-        /// <summary>
-        /// Device code will be reserved through the RavenDb compare exchange, while the User code is part of the ID.
-        /// </summary>
-        /// <param name="deviceFlowCodeEntity">Device flow code entity.</param>
-        /// <returns>The <see cref="Task"/> that represents the asynchronous operation.</returns>
-        /// <exception cref="DuplicateException">When concurrency exception.</exception>
-        protected virtual async Task StoreDeviceAuthorizationAsync(TDeviceFlowCode deviceFlowCodeEntity)
-        {
-            if (!CheckRequiredFields(deviceFlowCodeEntity, out string errorMessage))
-            {
-                throw new ArgumentException(errorMessage);
-            }
-
-            string deviceCode = deviceFlowCodeEntity.DeviceCode;
-            CompareExchangeUtility compareExchangeUtility = CreateCompareExchangeUtility();
-
-            // Reserve the unique DeviceCode.
-            bool deviceCodeReservationResult = await compareExchangeUtility
-                .CreateReservationAsync<string, TDeviceFlowCode>(
-                    CompareExchangeUtility.ReservationType.DeviceCode,
-                    deviceFlowCodeEntity,
-                    deviceCode,
-                    deviceFlowCodeEntity.Id
-                ).ConfigureAwait(false);
-            if (!deviceCodeReservationResult)
-            {
-                throw new DuplicateException();
-            }
-
-            var saveSuccess = false;
-            try
-            {
-                await DocumentSession
-                    .StoreAsync(
-                        deviceFlowCodeEntity,
-                        string.Empty,
-                        deviceFlowCodeEntity.Id
-                    )
-                    .ConfigureAwait(false);
-                DocumentSession.ManageDocumentExpiresMetadata(
-                    OperationalStoreOptions.Value,
-                    deviceFlowCodeEntity,
-                    deviceFlowCodeEntity.Expiration
-                );
-                await DocumentSession.SaveChangesAsync().ConfigureAwait(false);
-                saveSuccess = true;
-            }
-            catch (ConcurrencyException)
-            {
-                throw new DuplicateException();
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Failed storing new device flow code entity {}", ex.Message);
-            }
-            finally
-            {
-                if (!saveSuccess)
-                {
-                    bool removeResult = await compareExchangeUtility.RemoveReservationAsync(
-                        CompareExchangeUtility.ReservationType.DeviceCode,
-                        deviceFlowCodeEntity,
-                        deviceCode
-                    ).ConfigureAwait(false);
-                    if (!removeResult)
-                    {
-                        Logger.LogError(
-                            $"Failed removing device code '{deviceCode}' from compare exchange "
-                        );
-                    }
-                }
-            }
         }
 
         /// <inheritdoc/>
@@ -216,7 +175,10 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
 
             if (existingEntity is null)
             {
-                Logger.LogError("Device code flow user code `{userCode}` not found in database", userCode);
+                Logger.LogError(
+                    "Device code flow user code `{UserCode}` not found in database",
+                    userCode
+                );
                 throw new InvalidOperationException("Could not update device code.");
             }
 
@@ -226,7 +188,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             if (newSubjectId is null)
             {
                 Logger.LogError(
-                    "Device code flow update for user code `{userCode}` failed due to empty SubjectId",
+                    "Device code flow update for user code `{UserCode}` failed due to empty SubjectId",
                     userCode
                 );
                 throw new ArgumentException("New subject id must not be null or empty.");
@@ -254,7 +216,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             catch (ConcurrencyException)
             {
                 Logger.LogError(
-                    "Failed updating device code flow for user code {} due to concurrency exception",
+                    "Failed updating device code flow for user code {UserCode} due to concurrency exception",
                     userCode
                 );
                 throw new Exceptions.ConcurrencyException();
@@ -263,7 +225,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             {
                 Logger.LogError(
                     ex,
-                    "Failed updating device code flow for user code {} with message {}",
+                    "Failed updating device code flow for user code {UserCode} with message {Message}",
                     userCode,
                     ex.Message
                 );
@@ -282,7 +244,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             TDeviceFlowCode? entity = await FindDeviceFlowCodeAsync(deviceCode).ConfigureAwait(false);
             if (entity is null)
             {
-                Logger.LogDebug("Device flow code with code `{deviceCode}` not found", deviceCode);
+                Logger.LogDebug("Device flow code with code `{DeviceCode}` not found", deviceCode);
                 return;
             }
 
@@ -297,7 +259,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             catch (ConcurrencyException)
             {
                 Logger.LogError(
-                    "Failed removing device flow code for device code {} due to concurrency exception",
+                    "Failed removing device flow code for device code {DeviceCode} due to concurrency exception",
                     deviceCode
                 );
                 throw new Exceptions.ConcurrencyException();
@@ -306,7 +268,9 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             {
                 Logger.LogError(
                     ex,
-                    $"Failed removing device flow code entity with device code `{deviceCode}`. {ex.Message}"
+                    "Failed removing device flow code entity with device code `{DeviceCode}`. {Message}",
+                    deviceCode,
+                    ex.Message
                 );
             }
             finally
@@ -322,7 +286,83 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                     if (!removeResult)
                     {
                         Logger.LogError(
-                            $"Failed removing device flow code entity from compare exchange for device code`{deviceCode}` "
+                            "Failed removing device flow code entity from compare exchange for device code`{DeviceCode}` ",
+                            deviceCode
+                        );
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Device code will be reserved through the RavenDb compare exchange, while the User code is part of the ID.
+        /// </summary>
+        /// <param name="deviceFlowCodeEntity">Device flow code entity.</param>
+        /// <returns>The <see cref="Task"/> that represents the asynchronous operation.</returns>
+        /// <exception cref="DuplicateException">When concurrency exception.</exception>
+        protected virtual async Task StoreDeviceAuthorizationAsync(TDeviceFlowCode deviceFlowCodeEntity)
+        {
+            if (!CheckRequiredFields(deviceFlowCodeEntity, out string errorMessage))
+            {
+                throw new ArgumentException(errorMessage);
+            }
+
+            string deviceCode = deviceFlowCodeEntity.DeviceCode;
+            CompareExchangeUtility compareExchangeUtility = CreateCompareExchangeUtility();
+
+            // Reserve the unique DeviceCode.
+            bool deviceCodeReservationResult = await compareExchangeUtility
+                .CreateReservationAsync(
+                    CompareExchangeUtility.ReservationType.DeviceCode,
+                    deviceFlowCodeEntity,
+                    deviceCode,
+                    deviceFlowCodeEntity.Id
+                ).ConfigureAwait(false);
+            if (!deviceCodeReservationResult)
+            {
+                throw new DuplicateException();
+            }
+
+            var saveSuccess = false;
+            try
+            {
+                await DocumentSession
+                    .StoreAsync(
+                        deviceFlowCodeEntity,
+                        string.Empty,
+                        deviceFlowCodeEntity.Id
+                    )
+                    .ConfigureAwait(false);
+                DocumentSession.ManageDocumentExpiresMetadata(
+                    OperationalStoreOptions.Value,
+                    deviceFlowCodeEntity,
+                    deviceFlowCodeEntity.Expiration
+                );
+                await DocumentSession.SaveChangesAsync().ConfigureAwait(false);
+                saveSuccess = true;
+            }
+            catch (ConcurrencyException)
+            {
+                throw new DuplicateException();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed storing new device flow code entity {Message}", ex.Message);
+            }
+            finally
+            {
+                if (!saveSuccess)
+                {
+                    bool removeResult = await compareExchangeUtility.RemoveReservationAsync(
+                        CompareExchangeUtility.ReservationType.DeviceCode,
+                        deviceFlowCodeEntity,
+                        deviceCode
+                    ).ConfigureAwait(false);
+                    if (!removeResult)
+                    {
+                        Logger.LogError(
+                            "Failed removing device code '{DeviceCode}' from compare exchange ",
+                            deviceCode
                         );
                     }
                 }
@@ -386,7 +426,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
 
         /// <summary>
         /// Creates the <see cref="TDeviceFlowCode"/> Id by using the user code.
-        /// As the Device Code is supposed to be unique as well we will use the RavenDB compare exchange for the device code. 
+        /// As the Device Code is supposed to be unique as well we will use the RavenDB compare exchange for the device code.
         /// </summary>
         /// <param name="userCode">User code.</param>
         /// <returns><see cref="TDeviceFlowCode"/> id represented by the collection prefix and the user code.</returns>
@@ -468,7 +508,9 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             {
                 Logger.LogWarning(
                     "Device code flow compare exchange has value but entity was not found. " +
-                    $"Entity id: {entityId} DeviceCode: {deviceCode}"
+                    "Entity id: {EntityId} DeviceCode: {DeviceCode}",
+                    entityId,
+                    deviceCode
                 );
                 return null;
             }
@@ -477,7 +519,9 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             {
                 Logger.LogWarning(
                     "Device code flow compare exchange value that points to a entity which device code value" +
-                    $" differs from the compare exchange device code value. Entity id: {entityId} DeviceCode: {deviceCode}"
+                    " differs from the compare exchange device code value. Entity id: {EntityId} DeviceCode: {DeviceCode}",
+                    entityId,
+                    deviceCode
                 );
                 return null;
             }

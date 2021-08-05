@@ -10,21 +10,35 @@ using Raven.Client.Exceptions;
 
 namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
 {
+    /// <inheritdoc />
     public class ClientStoreExtension : ClientStoreExtension<Client, Entities.Client>
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ClientStoreExtension"/> class.
+        /// </summary>
+        /// <param name="identityServerDocumentSessionProvider"></param>
+        /// <param name="mapper"></param>
+        /// <param name="logger"></param>
         public ClientStoreExtension(
             IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             IIdentityServerStoreMapper mapper,
-            ILogger<ClientStoreExtension<Client, Entities.Client>> logger)
+            ILogger<ClientStoreExtension> logger)
             : base(identityServerDocumentSessionProvider, mapper, logger)
         {
         }
     }
 
+    /// <inheritdoc />
     public abstract class ClientStoreExtension<TClientModel, TClientEntity> : IClientStoreExtension<TClientModel>
         where TClientModel : Client
         where TClientEntity : Entities.Client
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ClientStoreExtension{TClientModel, TClientEntity}"/> class.
+        /// </summary>
+        /// <param name="identityServerDocumentSessionProvider"></param>
+        /// <param name="mapper"></param>
+        /// <param name="logger"></param>
         protected ClientStoreExtension(
             IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             IIdentityServerStoreMapper mapper,
@@ -35,12 +49,22 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             Logger = logger;
         }
 
+        /// <summary>
+        /// Gets the document session.
+        /// </summary>
         protected IAsyncDocumentSession DocumentSession { get; }
 
+        /// <summary>
+        /// Gets the mapper.
+        /// </summary>
         protected IIdentityServerStoreMapper Mapper { get; }
 
+        /// <summary>
+        /// Gets the logger.
+        /// </summary>
         protected ILogger<ClientStoreExtension<TClientModel, TClientEntity>> Logger { get; }
 
+        /// <inheritdoc />
         public virtual async Task<StoreResult> CreateAsync(
             TClientModel client,
             CancellationToken cancellationToken = default)
@@ -76,7 +100,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             {
                 Logger.LogError(
                     concurrencyException,
-                    "Error creating client. ClientId {0}; Entity ID {1}",
+                    "Error creating client. ClientId {ClientId}; Entity ID {EntityId}",
                     client.ClientId,
                     entity.Id
                 );
@@ -86,7 +110,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             {
                 Logger.LogError(
                     ex,
-                    "Error creating client. ClientId {0}; Entity ID {1}",
+                    "Error creating client. ClientId {ClientId}; Entity ID {EntityId}",
                     client.ClientId,
                     entity.Id
                 );
@@ -94,6 +118,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
         }
 
+        /// <inheritdoc />
         public virtual async Task<StoreResult> UpdateAsync(
             TClientModel client,
             CancellationToken cancellationToken = default)
@@ -137,7 +162,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             {
                 Logger.LogError(
                     concurrencyException,
-                    "Error updating client. Entity ID {1}",
+                    "Error updating client. Entity ID {EntityId}",
                     entityId
                 );
                 return StoreResult.Failure(ErrorDescriber.ConcurrencyException);
@@ -146,14 +171,16 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             {
                 Logger.LogError(
                     ex,
-                    "Error updating client. Entity ID {1}",
+                    "Error updating client. Entity ID {EntityId}",
                     entityId
                 );
                 return StoreResult.Failure(ErrorDescriber.GeneralError);
             }
         }
 
-        public virtual async Task<StoreResult> DeleteAsync(string clientId,
+        /// <inheritdoc />
+        public virtual async Task<StoreResult> DeleteAsync(
+            string clientId,
             CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -187,7 +214,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             {
                 Logger.LogError(
                     concurrencyException,
-                    "Error deleting client. Entity ID {1}",
+                    "Error deleting client. Entity ID {EntityId}",
                     entityId
                 );
                 return StoreResult.Failure(ErrorDescriber.ConcurrencyException);
@@ -196,13 +223,19 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             {
                 Logger.LogError(
                     ex,
-                    "Error deleting client. Entity ID {1}",
+                    "Error deleting client. Entity ID {EntityId}",
                     entityId
                 );
                 return StoreResult.Failure(ErrorDescriber.GeneralError);
             }
         }
 
+        /// <summary>
+        /// Check client entity required fields.
+        /// </summary>
+        /// <param name="clientEntity">Client entity.</param>
+        /// <param name="errorMessage">Error message.</param>
+        /// <returns>True if all fields are correct, False otherwise.</returns>
         protected virtual bool CheckRequiredFields(TClientEntity clientEntity, out string errorMessage)
         {
             errorMessage = string.Empty;

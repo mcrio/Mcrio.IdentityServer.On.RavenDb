@@ -8,15 +8,23 @@ using Raven.Client.Documents;
 
 namespace Mcrio.IdentityServer.On.RavenDb.Storage.Mappers
 {
+    /// <summary>
+    /// Identity server entities to store model mapper.
+    /// </summary>
     public class IdentityServerStoreMapper : BaseMapper, IIdentityServerStoreMapper
     {
         private readonly IDocumentStore _documentStore;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="IdentityServerStoreMapper"/> class.
+        /// </summary>
+        /// <param name="documentStore">Document store.</param>
         public IdentityServerStoreMapper(IDocumentStore documentStore)
         {
             _documentStore = documentStore;
         }
 
+        /// <inheritdoc />
         public void Map<TSource, TDestination>(TSource source, TDestination destination)
         {
             if (source == null)
@@ -32,6 +40,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Mappers
             Mapper.Map(source, destination);
         }
 
+        /// <inheritdoc />
         public string CreateEntityId<TEntity>(string uniqueValue)
             where TEntity : IEntity
         {
@@ -44,6 +53,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Mappers
             return $"{prefixWithSeparator}{uniqueValue}";
         }
 
+        /// <inheritdoc />
         public TModel ToModel<TEntity, TModel>(TEntity entity)
             where TEntity : IEntity
         {
@@ -55,6 +65,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Mappers
             return Mapper.Map<TModel>(entity);
         }
 
+        /// <inheritdoc />
         public TEntity ToEntity<TModel, TEntity>(TModel model)
             where TEntity : IEntity
         {
@@ -66,6 +77,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Mappers
             return Mapper.Map<TEntity>(model);
         }
 
+        /// <inheritdoc />
         protected override IEnumerable<Profile> GetMapperProfiles()
         {
             return new Profile[]

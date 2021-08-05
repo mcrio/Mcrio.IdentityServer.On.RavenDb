@@ -18,21 +18,37 @@ using Raven.Client.Exceptions;
 
 namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
 {
+    /// <inheritdoc />
     public class PersistedGrantStore : PersistedGrantStore<Entities.PersistedGrant>
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PersistedGrantStore"/> class.
+        /// </summary>
+        /// <param name="identityServerDocumentSessionProvider"></param>
+        /// <param name="mapper"></param>
+        /// <param name="logger"></param>
+        /// <param name="operationalStoreOptions"></param>
         public PersistedGrantStore(
             IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             IIdentityServerStoreMapper mapper,
-            ILogger<PersistedGrantStore<Entities.PersistedGrant>> logger,
+            ILogger<PersistedGrantStore> logger,
             IOptionsSnapshot<OperationalStoreOptions> operationalStoreOptions)
             : base(identityServerDocumentSessionProvider, mapper, logger, operationalStoreOptions)
         {
         }
     }
 
+    /// <inheritdoc />
     public abstract class PersistedGrantStore<TPersistedGrantEntity> : IPersistedGrantStore
         where TPersistedGrantEntity : Entities.PersistedGrant
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PersistedGrantStore{TPersistedGrantEntity}"/> class.
+        /// </summary>
+        /// <param name="identityServerDocumentSessionProvider"></param>
+        /// <param name="mapper"></param>
+        /// <param name="logger"></param>
+        /// <param name="operationalStoreOptions"></param>
         protected PersistedGrantStore(
             IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             IIdentityServerStoreMapper mapper,
@@ -45,14 +61,27 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             OperationalStoreOptions = operationalStoreOptions;
         }
 
+        /// <summary>
+        /// Gets the document session.
+        /// </summary>
         protected IAsyncDocumentSession DocumentSession { get; }
 
+        /// <summary>
+        /// Gets the mapper.
+        /// </summary>
         protected IIdentityServerStoreMapper Mapper { get; }
 
+        /// <summary>
+        /// Gets the logger.
+        /// </summary>
         protected ILogger<PersistedGrantStore<TPersistedGrantEntity>> Logger { get; }
 
+        /// <summary>
+        /// Gets the operational store options.
+        /// </summary>
         protected IOptionsSnapshot<OperationalStoreOptions> OperationalStoreOptions { get; }
 
+        /// <inheritdoc />
         public virtual Task StoreAsync(PersistedGrant grant)
         {
             if (grant == null)
@@ -66,35 +95,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             return StoreAsync(grantEntity);
         }
 
-        protected virtual async Task StoreAsync(TPersistedGrantEntity grantEntity)
-        {
-            if (!CheckRequiredFields(grantEntity, out string errorMsg))
-            {
-                Logger.LogError($"Error storing persisted grant because of required fields check failure: {errorMsg}");
-                return;
-            }
-
-            string entityId = grantEntity.Id;
-            TPersistedGrantEntity entityInSession = await DocumentSession
-                .LoadAsync<TPersistedGrantEntity>(entityId)
-                .ConfigureAwait(false);
-
-            StoreResult operationResult;
-            if (entityInSession is null)
-            {
-                operationResult = await CreateAsync(grantEntity).ConfigureAwait(false);
-            }
-            else
-            {
-                operationResult = await UpdateAsync(grantEntity, entityInSession).ConfigureAwait(false);
-            }
-
-            if (operationResult.IsFailure)
-            {
-                Logger.LogError($"Error storing persisted grant with error: {operationResult.Error}");
-            }
-        }
-
+        /// <inheritdoc />
         public virtual async Task<PersistedGrant> GetAsync(string key)
         {
             if (string.IsNullOrWhiteSpace(key))
@@ -112,6 +113,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                 : Mapper.ToModel<TPersistedGrantEntity, PersistedGrant>(entity);
         }
 
+        /// <inheritdoc />
         public virtual async Task<IEnumerable<PersistedGrant>> GetAllAsync(
             PersistedGrantFilter filter)
         {
@@ -154,7 +156,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             {
                 Logger.LogError(
                     concurrencyException,
-                    "Error deleting persisted grant {}. {}.",
+                    "Error deleting persisted grant {EntityId}. {Exception}",
                     entityId,
                     ErrorDescriber.ConcurrencyException
                 );
@@ -163,7 +165,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             {
                 Logger.LogError(
                     ex,
-                    "Error deleting persisted grant {}. {}.",
+                    "Error deleting persisted grant {EntityId}. {Error}",
                     entityId,
                     ErrorDescriber.GeneralError
                 );
@@ -190,12 +192,58 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             catch (TimeoutException)
             {
                 Logger.LogWarning(
-                    "Remove all persisted grants operation took more than {} seconds.",
+                    "Remove all persisted grants operation took more than {Seconds} seconds",
                     deleteOperationTimeoutSec
                 );
             }
         }
 
+        /// <summary>
+        /// Store persisted grant entity.
+        /// </summary>
+        /// <param name="grantEntity">Grant entity.</param>
+        /// <returns>The <see cref="Task"/> that represents the asynchronous operation.</returns>
+        protected virtual async Task StoreAsync(TPersistedGrantEntity grantEntity)
+        {
+            if (!CheckRequiredFields(grantEntity, out string errorMsg))
+            {
+                Logger.LogError(
+                    "Error storing persisted grant because of required fields check failure: {ErrorMsg}",
+                    errorMsg
+                );
+                return;
+            }
+
+            string entityId = grantEntity.Id;
+            TPersistedGrantEntity entityInSession = await DocumentSession
+                .LoadAsync<TPersistedGrantEntity>(entityId)
+                .ConfigureAwait(false);
+
+            StoreResult operationResult;
+            if (entityInSession is null)
+            {
+                operationResult = await CreateAsync(grantEntity).ConfigureAwait(false);
+            }
+            else
+            {
+                operationResult = await UpdateAsync(grantEntity, entityInSession).ConfigureAwait(false);
+            }
+
+            if (operationResult.IsFailure)
+            {
+                Logger.LogError(
+                    "Error storing persisted grant with error: {Error}",
+                    operationResult.Error
+                );
+            }
+        }
+
+        /// <summary>
+        /// Make sure Persisted Grant entity required fields are populated.
+        /// </summary>
+        /// <param name="persistedGrant">Persisted grant.</param>
+        /// <param name="errorMessage">Error message.</param>
+        /// <returns>TRUE if required fields are populated, FALSE otherwise.</returns>
         protected virtual bool CheckRequiredFields(TPersistedGrantEntity persistedGrant, out string errorMessage)
         {
             errorMessage = string.Empty;
@@ -239,6 +287,11 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             return true;
         }
 
+        /// <summary>
+        /// Create persisted grant entity.
+        /// </summary>
+        /// <param name="entity">Entity.</param>
+        /// <returns>The <see cref="Task"/> that represents the asynchronous operation.</returns>
         protected virtual async Task<StoreResult> CreateAsync(TPersistedGrantEntity entity)
         {
             try
@@ -256,7 +309,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             {
                 Logger.LogError(
                     concurrencyException,
-                    "Error creating persisted grant. Key {0}; Entity ID {1}",
+                    "Error creating persisted grant. Key {EntityKey}; Entity ID {EntityId}",
                     entity.Key,
                     entity.Id
                 );
@@ -266,7 +319,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             {
                 Logger.LogError(
                     ex,
-                    "Error creating persisted grant. Key {0}; Entity ID {1}",
+                    "Error creating persisted grant. Key {EntityKey}; Entity ID {EntityId}",
                     entity.Key,
                     entity.Id
                 );
@@ -274,6 +327,12 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
         }
 
+        /// <summary>
+        /// Update persisted grant.
+        /// </summary>
+        /// <param name="newGrantData">New persisted grant.</param>
+        /// <param name="entityInSession">Persisted grant loaded in session.</param>
+        /// <returns>The <see cref="Task"/> that represents the asynchronous operation.</returns>
         protected virtual async Task<StoreResult> UpdateAsync(
             TPersistedGrantEntity newGrantData,
             TPersistedGrantEntity entityInSession)
@@ -299,7 +358,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             {
                 Logger.LogError(
                     concurrencyException,
-                    "Error updating persisted grant. Entity ID {1}",
+                    "Error updating persisted grant. Entity ID {EntityId}",
                     entityId
                 );
                 return StoreResult.Failure(ErrorDescriber.ConcurrencyException);
@@ -308,13 +367,19 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             {
                 Logger.LogError(
                     ex,
-                    "Error updating persisted grant. Entity ID {1}",
+                    "Error updating persisted grant. Entity ID {EntityId}",
                     entityId
                 );
                 return StoreResult.Failure(ErrorDescriber.GeneralError);
             }
         }
 
+        /// <summary>
+        /// Apply search filter.
+        /// </summary>
+        /// <param name="query">Query.</param>
+        /// <param name="filter">Filter to apply to query.</param>
+        /// <returns>Provided Raven queryable object.</returns>
         protected virtual IRavenQueryable<TPersistedGrantEntity> ApplyFilter(
             IRavenQueryable<TPersistedGrantEntity> query,
             PersistedGrantFilter filter)
