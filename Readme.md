@@ -56,7 +56,7 @@ Covers most of the tests implemented by the official EntityFramework stores.
 
 ### NuGet Package
 
-Using the NuGet package manager install the [Mcrio.IdentityServer.On.RavenDb](#) package, or add the following line to the .csproj file:
+Using the NuGet package manager install the [Mcrio.IdentityServer.On.RavenDb](https://www.nuget.org/packages/Mcrio.IdentityServer.On.RavenDb/) package, or add the following line to the .csproj file:
 
 ```xml
 <ItemGroup>
@@ -68,7 +68,7 @@ This package contains extension methods which allow easy setup of RavenDB stores
 with IdentityServer4.
 
 If you want to reference the stores implementations package only, please check
-NuGet package [Mcrio.IdentityServer.On.RavenDb.Storage](#).
+NuGet package [Mcrio.IdentityServer.On.RavenDb.Storage](https://www.nuget.org/packages/Mcrio.IdentityServer.On.RavenDb.Storage/).
 
 ## Usage
 
