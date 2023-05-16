@@ -8,10 +8,44 @@ using Raven.Client.Documents;
 
 namespace Mcrio.IdentityServer.On.RavenDb.Storage.Mappers
 {
+    /// <inheritdoc />
+    public class IdentityServerStoreMapper
+        : IdentityServerStoreMapper<
+            ApiResource,
+            Client,
+            IdentityResource,
+            PersistedGrant,
+            ApiScope>
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="IdentityServerStoreMapper"/> class.
+        /// </summary>
+        /// <param name="documentStore"></param>
+        public IdentityServerStoreMapper(IDocumentStore documentStore)
+            : base(documentStore)
+        {
+        }
+    }
+
     /// <summary>
     /// Identity server entities to store model mapper.
     /// </summary>
-    public class IdentityServerStoreMapper : BaseMapper, IIdentityServerStoreMapper
+    /// <typeparam name="TApiResource">Api resource type.</typeparam>
+    /// <typeparam name="TClient">Api client type.</typeparam>
+    /// <typeparam name="TIdentityResource">Api identity resource type.</typeparam>
+    /// <typeparam name="TPersistedGrant">Api persisted grant type.</typeparam>
+    /// <typeparam name="TApiScope">Api scope type.</typeparam>
+    public abstract class IdentityServerStoreMapper<
+        TApiResource,
+        TClient,
+        TIdentityResource,
+        TPersistedGrant,
+        TApiScope> : BaseMapper, IIdentityServerStoreMapper
+        where TApiResource : ApiResource
+        where TClient : Client
+        where TIdentityResource : IdentityResource
+        where TPersistedGrant : PersistedGrant
+        where TApiScope : ApiScope
     {
         private readonly IDocumentStore _documentStore;
 
@@ -19,13 +53,13 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Mappers
         /// Initializes a new instance of the <see cref="IdentityServerStoreMapper"/> class.
         /// </summary>
         /// <param name="documentStore">Document store.</param>
-        public IdentityServerStoreMapper(IDocumentStore documentStore)
+        protected IdentityServerStoreMapper(IDocumentStore documentStore)
         {
             _documentStore = documentStore;
         }
 
         /// <inheritdoc />
-        public void Map<TSource, TDestination>(TSource source, TDestination destination)
+        public virtual void Map<TSource, TDestination>(TSource source, TDestination destination)
         {
             if (source == null)
             {
@@ -41,7 +75,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Mappers
         }
 
         /// <inheritdoc />
-        public string CreateEntityId<TEntity>(string uniqueValue)
+        public virtual string CreateEntityId<TEntity>(string uniqueValue)
             where TEntity : IEntity
         {
             if (string.IsNullOrWhiteSpace(uniqueValue))
@@ -54,7 +88,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Mappers
         }
 
         /// <inheritdoc />
-        public TModel ToModel<TEntity, TModel>(TEntity entity)
+        public virtual TModel ToModel<TEntity, TModel>(TEntity entity)
             where TEntity : IEntity
         {
             if (entity == null)
@@ -66,7 +100,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Mappers
         }
 
         /// <inheritdoc />
-        public TEntity ToEntity<TModel, TEntity>(TModel model)
+        public virtual TEntity ToEntity<TModel, TEntity>(TModel model)
             where TEntity : IEntity
         {
             if (model == null)
@@ -82,11 +116,11 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Mappers
         {
             return new Profile[]
             {
-                new ApiResourceMapperProfile(CreateEntityId<ApiResource>),
-                new ClientMapperProfile(CreateEntityId<Client>),
-                new IdentityResourceMapperProfile(CreateEntityId<IdentityResource>),
-                new PersistedGrantMapperProfile(CreateEntityId<PersistedGrant>),
-                new ScopeMapperProfile(CreateEntityId<ApiScope>),
+                new ApiResourceMapperProfile(CreateEntityId<TApiResource>),
+                new ClientMapperProfile(CreateEntityId<TClient>),
+                new IdentityResourceMapperProfile(CreateEntityId<TIdentityResource>),
+                new PersistedGrantMapperProfile(CreateEntityId<TPersistedGrant>),
+                new ScopeMapperProfile(CreateEntityId<TApiScope>),
             };
         }
     }

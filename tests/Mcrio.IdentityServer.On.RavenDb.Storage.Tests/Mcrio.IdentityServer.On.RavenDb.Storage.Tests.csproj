@@ -22,7 +22,7 @@
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.1" />
-        <PackageReference Include="RavenDB.TestDriver" Version="5.2.1" />
+        <PackageReference Include="RavenDB.TestDriver" Version="5.3.100" />
         <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" />
         <PackageReference Include="FluentAssertions" Version="5.10.3" />
         <PackageReference Include="Moq" Version="4.16.1" />
