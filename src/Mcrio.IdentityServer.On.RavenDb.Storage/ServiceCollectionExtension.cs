@@ -32,17 +32,23 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage
         /// </summary>
         /// <param name="serviceCollection">Service collection.</param>
         /// <param name="documentSessionServiceLocator">RavenDb document session service locator.</param>
-        /// <param name="documentStoreServiceLocator">RavenDb document store </param>
+        /// <param name="documentStoreServiceLocator">RavenDb document store. </param>
+        /// <param name="uniqueValuesReservationOptionsConfig">Configure Unique value reservations options.</param>
         /// <returns>Same service collection the extension method is applied on.</returns>
         public static IServiceCollection IdentityServerAddRavenDbServices(
             this IServiceCollection serviceCollection,
             IdentityServerDocumentSessionServiceLocator documentSessionServiceLocator,
-            IdentityServerDocumentStoreServiceLocator documentStoreServiceLocator)
+            IdentityServerDocumentStoreServiceLocator documentStoreServiceLocator,
+            Action<UniqueValuesReservationOptions>? uniqueValuesReservationOptionsConfig = null)
         {
             if (documentSessionServiceLocator == null)
             {
                 throw new ArgumentNullException(nameof(documentSessionServiceLocator));
             }
+
+            var uniqueValueRelatedOptions = new UniqueValuesReservationOptions();
+            uniqueValuesReservationOptionsConfig?.Invoke(uniqueValueRelatedOptions);
+            serviceCollection.TryAddSingleton(uniqueValueRelatedOptions);
 
             // Identity server related Ravendb document session provider
             serviceCollection.TryAddScoped<IdentityServerDocumentSessionProvider>(

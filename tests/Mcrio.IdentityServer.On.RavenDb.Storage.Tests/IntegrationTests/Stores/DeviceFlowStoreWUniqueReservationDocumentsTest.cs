@@ -9,6 +9,7 @@ using IdentityServer4.Models;
 using IdentityServer4.Stores.Serialization;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Entities;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Exceptions;
+using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Utility;
 using Raven.Client;
 using Raven.Client.Documents;
 using Raven.Client.Documents.Session;
@@ -16,7 +17,11 @@ using Xunit;
 
 namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
 {
-    public class DeviceFlowStoreTest : IntegrationTestBase
+    /// <summary>
+    /// Device flow store tests where we use reservation documents and atomic guards for unique value
+    /// reservations. By default and per initial implementation compare exchange values were used.
+    /// </summary>
+    public class DeviceFlowStoreWUniqueReservationDocumentsTest : IntegrationTestBase
     {
         private readonly IPersistentGrantSerializer _serializer = new PersistentGrantSerializer();
 
@@ -46,11 +51,16 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 foundDeviceFlowCodes.UserCode.Should().Be(userCode);
             }
 
-            await AssertCompareExchangeKeyExistsWithValueAsync(
-                $"idsrv/devcode/{deviceCode}",
-                NewServiceScope().Mapper.CreateEntityId<DeviceFlowCode>(userCode),
-                "device code should be unique so we store it in the RavenDb compare exchange."
+            await AssertReservationDocumentExistsWithValueAsync(
+                deviceCode,
+                InitializeServices(
+                    uniqueValuesReservationOptionsConfig: options =>
+                        options.UseReservationDocumentsForUniqueValues = true
+                ).Mapper.CreateEntityId<DeviceFlowCode>(userCode),
+                "device code should be unique"
             );
+
+            WaitForUserToContinueTheTest(NewServiceScope().DocumentStore);
         }
 
         [Fact]
@@ -83,10 +93,10 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 deserializedData.Lifetime.Should().Be(data.Lifetime);
             }
 
-            await AssertCompareExchangeKeyExistsWithValueAsync(
-                $"idsrv/devcode/{deviceCode}",
+            await AssertReservationDocumentExistsWithValueAsync(
+                deviceCode,
                 NewServiceScope().Mapper.CreateEntityId<DeviceFlowCode>(userCode),
-                "device code should be unique so we store it in the RavenDb compare exchange."
+                "device code should be unique"
             );
         }
 
@@ -101,12 +111,13 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 CreationTime = DateTime.Now,
                 Lifetime = 300,
                 IsOpenId = true,
-                Subject = new ClaimsPrincipal(new ClaimsIdentity(
-                    new List<Claim> { new Claim(JwtClaimTypes.Subject, $"sub_{Guid.NewGuid().ToString()}") })
+                Subject = new ClaimsPrincipal(
+                    new ClaimsIdentity(
+                        new List<Claim> { new Claim(JwtClaimTypes.Subject, $"sub_{Guid.NewGuid().ToString()}") })
                 ),
             };
 
-            var scope = NewServiceScope();
+            ServiceScope scope = NewServiceScope();
             await scope.DeviceFlowStore.StoreDeviceAuthorizationAsync(
                 $"device_{Guid.NewGuid().ToString()}",
                 existingUserCode,
@@ -127,8 +138,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
 
             await addDuplicate.Should().ThrowAsync<DuplicateException>();
 
-            await AssertCompareExchangeKeyDoesNotExistAsync(
-                $"identityserver/devicecode/{anotherDeviceCode}",
+            await AssertReservationDocumentDoesNotExistAsync(
+                anotherDeviceCode,
                 "entity with same user code was not created"
             );
         }
@@ -144,9 +155,10 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 CreationTime = DateTime.Now,
                 Lifetime = 300,
                 IsOpenId = true,
-                Subject = new ClaimsPrincipal(new ClaimsIdentity(
-                    new List<Claim> { new Claim(JwtClaimTypes.Subject, $"sub_{Guid.NewGuid().ToString()}") }
-                )),
+                Subject = new ClaimsPrincipal(
+                    new ClaimsIdentity(
+                        new List<Claim> { new Claim(JwtClaimTypes.Subject, $"sub_{Guid.NewGuid().ToString()}") }
+                    )),
             };
 
             var firstDeviceUserCode = $"user_{Guid.NewGuid().ToString()}";
@@ -167,8 +179,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
 
             await addDuplicate.Should().ThrowAsync<DuplicateException>();
 
-            await AssertCompareExchangeKeyExistsWithValueAsync(
-                $"idsrv/devcode/{existingDeviceCode}",
+            await AssertReservationDocumentExistsWithValueAsync(
+                existingDeviceCode,
                 NewServiceScope().Mapper.CreateEntityId<DeviceFlowCode>(firstDeviceUserCode),
                 "device code should exist as it was reserved by the first device"
             );
@@ -188,9 +200,11 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 CreationTime = DateTime.Now,
                 Lifetime = 300,
                 IsOpenId = true,
-                Subject = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>
-                    { new Claim(JwtClaimTypes.Subject, expectedSubject) }
-                )),
+                Subject = new ClaimsPrincipal(
+                    new ClaimsIdentity(
+                        new List<Claim>
+                            { new Claim(JwtClaimTypes.Subject, expectedSubject) }
+                    )),
             };
 
             await NewServiceScope().DeviceFlowStore.StoreDeviceAuthorizationAsync(
@@ -236,9 +250,11 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 CreationTime = DateTime.Now,
                 Lifetime = 300,
                 IsOpenId = true,
-                Subject = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>
-                    { new Claim(JwtClaimTypes.Subject, expectedSubject) }
-                )),
+                Subject = new ClaimsPrincipal(
+                    new ClaimsIdentity(
+                        new List<Claim>
+                            { new Claim(JwtClaimTypes.Subject, expectedSubject) }
+                    )),
             };
 
             await NewServiceScope().DeviceFlowStore.StoreDeviceAuthorizationAsync(
@@ -264,7 +280,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
         [Fact]
         public async Task FindByDeviceCodeAsync_WhenDeviceCodeDoesNotExist_ExpectNull()
         {
-            var code = await NewServiceScope()
+            DeviceCode? code = await NewServiceScope()
                 .DeviceFlowStore
                 .FindByDeviceCodeAsync($"device_{Guid.NewGuid().ToString()}");
             code.Should().BeNull();
@@ -299,8 +315,10 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 ClientId = unauthorizedDeviceCode.ClientId,
                 RequestedScopes = unauthorizedDeviceCode.RequestedScopes,
                 AuthorizedScopes = unauthorizedDeviceCode.RequestedScopes,
-                Subject = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>
-                    { new Claim(JwtClaimTypes.Subject, expectedSubject) })),
+                Subject = new ClaimsPrincipal(
+                    new ClaimsIdentity(
+                        new List<Claim>
+                            { new Claim(JwtClaimTypes.Subject, expectedSubject) })),
                 IsAuthorized = true,
                 IsOpenId = true,
                 CreationTime = DateTime.Now,
@@ -331,7 +349,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 .Be(unauthorizedDeviceCode.CreationTime.AddSeconds(unauthorizedDeviceCode.Lifetime));
 
             // should be changed
-            var parsedCode = _serializer.Deserialize<DeviceCode>(updatedCode.Data);
+            DeviceCode? parsedCode = _serializer.Deserialize<DeviceCode>(updatedCode.Data);
             parsedCode.Should().BeEquivalentTo(
                 authorizedDeviceCode,
                 assertionOptions => assertionOptions.Excluding(x => x.Subject)
@@ -363,8 +381,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 existingDeviceCode
             );
 
-            await AssertCompareExchangeKeyExistsWithValueAsync(
-                $"idsrv/devcode/{testDeviceCode}",
+            await AssertReservationDocumentExistsWithValueAsync(
+                testDeviceCode,
                 NewServiceScope().Mapper.CreateEntityId<DeviceFlowCode>(testUserCode)
             );
 
@@ -380,7 +398,9 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 foundCode.Should().BeNull();
             }
 
-            await AssertCompareExchangeKeyDoesNotExistAsync($"identityserver/devicecode/{testDeviceCode}");
+            await AssertReservationDocumentDoesNotExistAsync(
+                testDeviceCode
+            );
         }
 
         [Fact]
@@ -388,7 +408,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
         {
             var deviceCode = $"device_{Guid.NewGuid().ToString()}";
             await NewServiceScope().DeviceFlowStore.RemoveByDeviceCodeAsync(deviceCode);
-            await AssertCompareExchangeKeyDoesNotExistAsync($"identityserver/devicecode/{deviceCode}");
+            await AssertReservationDocumentDoesNotExistAsync(deviceCode);
         }
 
         [Fact]
@@ -404,9 +424,11 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 CreationTime = DateTime.Now,
                 Lifetime = 300,
                 IsOpenId = true,
-                Subject = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>
-                    { new Claim(JwtClaimTypes.Subject, $"sub_{Guid.NewGuid().ToString()}") }
-                )),
+                Subject = new ClaimsPrincipal(
+                    new ClaimsIdentity(
+                        new List<Claim>
+                            { new Claim(JwtClaimTypes.Subject, $"sub_{Guid.NewGuid().ToString()}") }
+                    )),
             };
 
             await NewServiceScope(
@@ -431,19 +453,16 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 documentMetadata.Should().ContainKey(Constants.Documents.Metadata.Expires);
                 documentMetadata[Constants.Documents.Metadata.Expires]
                     .Should()
-                    .Be(originalDeviceCode.CreationTime.AddSeconds(originalDeviceCode.Lifetime).ToUniversalTime()
-                        .ToString("O"));
+                    .Be(
+                        originalDeviceCode.CreationTime.AddSeconds(originalDeviceCode.Lifetime).ToUniversalTime()
+                            .ToString("O"));
 
-                // compare exchange expiry
-                var result = await GetCompareExchangeAsync<string>(
-                    scope.DocumentStore,
-                    $"idsrv/devcode/{foundCode.DeviceCode}"
+                // reservation  expiry
+                await AssertReservationDocumentExpiry(
+                    foundCode.DeviceCode,
+                    originalDeviceCode.CreationTime.AddSeconds(originalDeviceCode.Lifetime).ToUniversalTime()
+                        .ToString("O")
                 );
-                result.Should().NotBeNull();
-                result.Metadata[Constants.Documents.Metadata.Expires]
-                    .Should()
-                    .Be(originalDeviceCode.CreationTime.AddSeconds(originalDeviceCode.Lifetime).ToUniversalTime()
-                        .ToString("O"));
             }
 
             {
@@ -475,19 +494,16 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                     metadata.Should().ContainKey(Constants.Documents.Metadata.Expires);
                     metadata[Constants.Documents.Metadata.Expires]
                         .Should()
-                        .Be(originalDeviceCode.CreationTime.AddSeconds(originalDeviceCode.Lifetime).ToUniversalTime()
-                            .ToString("O"));
+                        .Be(
+                            originalDeviceCode.CreationTime.AddSeconds(originalDeviceCode.Lifetime).ToUniversalTime()
+                                .ToString("O"));
 
-                    // compare exchange expiry
-                    var result = await GetCompareExchangeAsync<string>(
-                        scope.DocumentStore,
-                        $"idsrv/devcode/{foundCode.DeviceCode}"
+                    // reservation  expiry
+                    await AssertReservationDocumentExpiry(
+                        foundCode.DeviceCode,
+                        originalDeviceCode.CreationTime.AddSeconds(originalDeviceCode.Lifetime).ToUniversalTime()
+                            .ToString("O")
                     );
-                    result.Should().NotBeNull();
-                    result.Metadata[Constants.Documents.Metadata.Expires]
-                        .Should()
-                        .Be(originalDeviceCode.CreationTime.AddSeconds(originalDeviceCode.Lifetime).ToUniversalTime()
-                            .ToString("O"));
                 }
             }
         }
@@ -505,9 +521,11 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 CreationTime = DateTime.Now,
                 Lifetime = 300,
                 IsOpenId = true,
-                Subject = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>
-                    { new Claim(JwtClaimTypes.Subject, $"sub_{Guid.NewGuid().ToString()}") }
-                )),
+                Subject = new ClaimsPrincipal(
+                    new ClaimsIdentity(
+                        new List<Claim>
+                            { new Claim(JwtClaimTypes.Subject, $"sub_{Guid.NewGuid().ToString()}") }
+                    )),
             };
 
             await NewServiceScope(
@@ -532,13 +550,11 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 IMetadataDictionary metadata = scope.DocumentSession.Advanced.GetMetadataFor(foundCode);
                 metadata.Should().NotContainKey(Constants.Documents.Metadata.Expires, "feature is disabled");
 
-                // compare exchange expiry
-                var result = await GetCompareExchangeAsync<string>(
-                    scope.DocumentStore,
-                    $"idsrv/devcode/{foundCode.DeviceCode}"
+                // reservation  expiry
+                await AssertReservationDocumentExpiry(
+                    foundCode.DeviceCode,
+                    null
                 );
-                result.Should().NotBeNull();
-                result.Metadata.Should().NotContainKey(Constants.Documents.Metadata.Expires);
             }
 
             deviceCode.Description = "Updated description";
@@ -558,20 +574,73 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests.Stores
                 IMetadataDictionary metadata = scope.DocumentSession.Advanced.GetMetadataFor(foundCode);
                 metadata.Should().NotContainKey(Constants.Documents.Metadata.Expires, "feature is disabled");
 
-                // compare exchange expiry
-                var result = await GetCompareExchangeAsync<string>(
-                    scope.DocumentStore,
-                    $"idsrv/devcode/{foundCode.DeviceCode}"
+                // reservation  expiry
+                await AssertReservationDocumentExpiry(
+                    foundCode.DeviceCode,
+                    null
                 );
-                result.Should().NotBeNull();
-                result.Metadata.Should().NotContainKey(Constants.Documents.Metadata.Expires);
+            }
+        }
+
+        private async Task AssertReservationDocumentExistsWithValueAsync(
+            string expectedUniqueValue,
+            string expectedReferenceDocument,
+            string because = "")
+        {
+            ServiceScope scope = NewServiceScope();
+            var uniqueUtility = new UniqueReservationDocumentUtility(
+                scope.DocumentSession,
+                UniqueReservationType.DeviceCode,
+                expectedUniqueValue
+            );
+            bool exists = await uniqueUtility.CheckIfUniqueIsTakenAsync();
+            exists.Should().BeTrue(because);
+
+            UniqueReservation reservation = await uniqueUtility.LoadReservationAsync();
+            reservation.Should().NotBeNull();
+            reservation.ReferenceId.Should().Be(expectedReferenceDocument);
+        }
+
+        private async Task AssertReservationDocumentDoesNotExistAsync(
+            string expectedUniqueValue,
+            string because = "")
+        {
+            ServiceScope scope = NewServiceScope();
+            var uniqueUtility = new UniqueReservationDocumentUtility(
+                scope.DocumentSession,
+                UniqueReservationType.DeviceCode,
+                expectedUniqueValue
+            );
+            bool exists = await uniqueUtility.CheckIfUniqueIsTakenAsync();
+            exists.Should().BeFalse(because);
+        }
+
+        private async Task AssertReservationDocumentExpiry(string expectedUniqueValue, string? expectedExpiry)
+        {
+            IAsyncDocumentSession session = NewServiceScope().DocumentSession;
+            var uniqueReservationUtil = new UniqueReservationDocumentUtility(
+                session,
+                UniqueReservationType.DeviceCode,
+                expectedUniqueValue
+            );
+            UniqueReservation reservation = await uniqueReservationUtil.LoadReservationAsync();
+            reservation.Should().NotBeNull();
+            IMetadataDictionary? metadata = session.Advanced.GetMetadataFor(reservation);
+
+            if (expectedExpiry != null)
+            {
+                metadata[Constants.Documents.Metadata.Expires].Should().Be(expectedExpiry);
+            }
+            else
+            {
+                metadata.Should().NotContainKey(Constants.Documents.Metadata.Expires);
             }
         }
 
         private ServiceScope NewServiceScope(Action<OperationalStoreOptions>? operationalStoreOptions = null)
             => InitializeServices(
                 operationalStoreOptions,
-                uniqueValuesReservationOptionsConfig: options => options.UseReservationDocumentsForUniqueValues = false
+                uniqueValuesReservationOptionsConfig: options => options.UseReservationDocumentsForUniqueValues = true
             );
     }
 }

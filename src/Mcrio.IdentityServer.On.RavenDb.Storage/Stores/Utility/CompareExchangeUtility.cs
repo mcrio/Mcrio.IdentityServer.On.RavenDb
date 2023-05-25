@@ -1,6 +1,5 @@
 using System;
 using System.Threading.Tasks;
-using Mcrio.IdentityServer.On.RavenDb.Storage.Entities;
 using Raven.Client.Documents;
 using Raven.Client.Documents.Operations.CompareExchange;
 using Raven.Client.Documents.Session;
@@ -24,152 +23,70 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Utility
         }
 
         /// <summary>
-        /// Represents different compare exchange reservation types.
-        /// </summary>
-        public enum ReservationType
-        {
-            /// <summary>
-            /// Device code reservation.
-            /// </summary>
-            DeviceCode,
-        }
-
-        /// <summary>
-        /// Creates a compare exchange reservation.
-        /// </summary>
-        /// <param name="reservationType">Reservation type.</param>
-        /// <param name="entity">Entity we are making the reservation for.</param>
-        /// <param name="expectedUniqueValue">Compare exchange unique value requested for given reservation type.</param>
-        /// <param name="data">Custom data to be stored.</param>
-        /// <typeparam name="TValue">Type of data to be stored.</typeparam>
-        /// <typeparam name="TEntity">Type of entity we are storing the unique value for.</typeparam>
-        /// <returns>The <see cref="Task"/> that represents the asynchronous operation.</returns>
-        internal Task<bool> CreateReservationAsync<TValue, TEntity>(
-            ReservationType reservationType,
-            TEntity entity,
-            string expectedUniqueValue,
-            TValue data = default!)
-            where TEntity : IEntity
-        {
-            return CreateReservationAsync(
-                CreateCompareExchangeKey(reservationType, entity, expectedUniqueValue),
-                data
-            );
-        }
-
-        /// <summary>
-        /// Removes an existing compare exchange reservation.
-        /// </summary>
-        /// <param name="reservationType">Reservation type.</param>
-        /// <param name="entity">Entity we are making the reservation for.</param>
-        /// <param name="expectedUniqueValue">Unique value requested for given reservation type.</param>
-        /// <typeparam name="TEntity">Type of entity we are storing the unique value for.</typeparam>
-        /// <returns>The <see cref="Task"/> that represents the asynchronous operation.</returns>
-        internal Task<bool> RemoveReservationAsync<TEntity>(
-            ReservationType reservationType,
-            TEntity entity,
-            string expectedUniqueValue)
-            where TEntity : IEntity
-        {
-            return RemoveReservationAsync(
-                CreateCompareExchangeKey(reservationType, entity, expectedUniqueValue)
-            );
-        }
-
-        /// <summary>
-        /// Retrieves an existing compare exchange value if it exists.
-        /// </summary>
-        /// <param name="reservationType">Reservation type.</param>
-        /// <param name="entity">Optional entity we are getting the reservation for.</param>
-        /// <param name="expectedUniqueValue">Unique value for the given reservation type.</param>
-        /// <typeparam name="TValue">Type of compare exchange data.</typeparam>
-        /// <typeparam name="TEntity">Type of entity we are storing the unique value for.</typeparam>
-        /// <returns>The <see cref="Task"/> that represents the asynchronous operation.</returns>
-        internal Task<CompareExchangeValue<TValue>?> GetReservationAsync<TValue, TEntity>(
-            ReservationType reservationType,
-            TEntity entity,
-            string expectedUniqueValue)
-            where TEntity : IEntity?
-        {
-            return GetReservationAsync<TValue>(
-                CreateCompareExchangeKey(reservationType, entity, expectedUniqueValue)
-            );
-        }
-
-        /// <summary>
-        /// Gets the compare exchange reservation key prefix for the given reservation type.
-        /// </summary>
-        /// <param name="reservationType"></param>
-        /// <returns>The compare exchange key prefix for the given reservation type.</returns>
-        protected virtual string GetKeyPrefix(ReservationType reservationType)
-        {
-            return reservationType switch
-            {
-                ReservationType.DeviceCode => "idsrv/devcode",
-                _ => throw new Exception($"Unhandled reservation type {reservationType}")
-            };
-        }
-
-        /// <summary>
         /// Creates the compare exchange key for th given reservation type, entity and unique value.
         /// </summary>
         /// <param name="reservationType">Type of reservation.</param>
-        /// <param name="entity">Optional entity related to the reservation.
-        /// Be aware it is optional and may not be available always, like in scenarios when looking up compare
-        /// exchange key without knowing the entity upfront.</param>
         /// <param name="expectedUniqueValue">The unique value.</param>
-        /// <typeparam name="TEntity">Type of entity we are making the reservation for.</typeparam>
         /// <returns>The complete compare exchange key.</returns>
-        protected virtual string CreateCompareExchangeKey<TEntity>(
-            ReservationType reservationType,
-            TEntity entity,
+        public virtual string CreateCompareExchangeKey(
+            UniqueReservationType reservationType,
             string expectedUniqueValue)
-            where TEntity : IEntity?
         {
-            return GetKeyPrefix(reservationType).TrimEnd('/') + '/' + expectedUniqueValue;
+            if (string.IsNullOrWhiteSpace(expectedUniqueValue))
+            {
+                throw new ArgumentException(
+                    $"Unexpected empty value for {nameof(expectedUniqueValue)} in {nameof(CreateCompareExchangeKey)}");
+            }
+
+            string prefix = reservationType switch
+            {
+                UniqueReservationType.DeviceCode => "idsrv/devcode",
+                _ => throw new Exception($"Unhandled reservation type {reservationType}")
+            };
+            return $"{prefix.TrimEnd('/')}/{expectedUniqueValue}";
         }
 
-        private async Task<bool> CreateReservationAsync<TValue>(
-            string cmpExchangeKey,
-            TValue data = default!)
+        /// <summary>
+        /// Loads the compare exchange value by given key.
+        /// </summary>
+        /// <param name="cmpExchangeKey"></param>
+        /// <typeparam name="TValue">Value type.</typeparam>
+        /// <returns>Compare exchange value if exists.</returns>
+        public Task<CompareExchangeValue<TValue>?> LoadCompareExchangeValueAsync<TValue>(string cmpExchangeKey)
         {
-            IDocumentStore documentStore = _documentSession.Advanced.DocumentStore;
+            if (string.IsNullOrWhiteSpace(cmpExchangeKey))
+            {
+                throw new ArgumentException(
+                    $"Unexpected empty value for {nameof(cmpExchangeKey)} in {nameof(LoadCompareExchangeValueAsync)}");
+            }
 
-            CompareExchangeResult<TValue> compareExchangeResult = await documentStore.Operations.SendAsync(
-                new PutCompareExchangeValueOperation<TValue>(cmpExchangeKey, data, 0)
-            ).ConfigureAwait(false);
-
-            return compareExchangeResult.Successful;
-        }
-
-        private Task<CompareExchangeValue<TValue>?> GetReservationAsync<TValue>(string cmpExchangeKey)
-        {
             IDocumentStore store = _documentSession.Advanced.DocumentStore;
             return store.Operations.SendAsync(
                 new GetCompareExchangeValueOperation<TValue>(cmpExchangeKey)
             );
         }
 
-        private async Task<bool> RemoveReservationAsync(string cmpExchangeKey)
+        /// <summary>
+        /// Update existing compare exchange value.
+        /// </summary>
+        /// <param name="existing">Existing compare exchange value.</param>
+        /// <typeparam name="T">Compare exchange value type.</typeparam>
+        /// <returns>Update result.</returns>
+        public async Task<CompareExchangeResult<T>> UpdateCompareExchangeValueAsync<T>(CompareExchangeValue<T> existing)
         {
-            IDocumentStore documentStore = _documentSession.Advanced.DocumentStore;
-
-            // get existing in order to get the index
-            CompareExchangeValue<string>? existingResult = await GetReservationAsync<string>(
-                cmpExchangeKey
-            ).ConfigureAwait(false);
-
-            if (existingResult is null)
+            if (existing == null)
             {
-                // it does not exist so return positive result
-                return true;
+                throw new ArgumentNullException(nameof(existing));
             }
 
-            CompareExchangeResult<string> compareExchangeResult = await documentStore.Operations.SendAsync(
-                new DeleteCompareExchangeValueOperation<string>(cmpExchangeKey, existingResult.Index)
-            ).ConfigureAwait(false);
-
-            return compareExchangeResult.Successful;
+            CompareExchangeResult<T>? result = await _documentSession.Advanced.DocumentStore.Operations.SendAsync(
+                new PutCompareExchangeValueOperation<T>(
+                    existing.Key,
+                    existing.Value,
+                    existing.Index,
+                    existing.Metadata
+                ));
+            return result;
         }
     }
 }

@@ -2,9 +2,16 @@ using System;
 
 namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Exceptions
 {
-    internal class ConcurrencyException : Exception
+    /// <summary>
+    /// Concurrency exception.
+    /// </summary>
+    public class ConcurrencyException : Exception
     {
-        internal ConcurrencyException(string? message = null)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ConcurrencyException"/> class.
+        /// </summary>
+        /// <param name="message">Optional exception message.</param>
+        public ConcurrencyException(string? message = null)
             : base(message ?? "Concurrency exception.")
         {
         }

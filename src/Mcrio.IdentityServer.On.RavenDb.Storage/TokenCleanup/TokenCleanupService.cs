@@ -68,6 +68,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.TokenCleanup
         /// <returns>The <see cref="Task"/> that represents the asynchronous operation.</returns>
         protected virtual Task RemoveExpiredDeviceCodesAsync()
         {
+            // todo: This will not clean up device code reservations that are reservation documents or compare exchange values!!
             /*
              * Note: For performance reasons we won't implement the IOperationalStoreNotification that is
              * done on the EF core side. Purpose of it was to make a notification about every single deletion.

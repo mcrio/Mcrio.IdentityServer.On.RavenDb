@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using IdentityModel;
 using IdentityServer4.Models;
@@ -29,19 +30,27 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
         /// <param name="mapper"></param>
         /// <param name="logger"></param>
         /// <param name="operationalStoreOptions"></param>
+        /// <param name="uniqueValuesReservationOptions"></param>
         public DeviceFlowStore(
             IPersistentGrantSerializer serializer,
             IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             IIdentityServerStoreMapper mapper,
             ILogger<DeviceFlowStore> logger,
-            IOptionsSnapshot<OperationalStoreOptions> operationalStoreOptions)
-            : base(serializer, identityServerDocumentSessionProvider, mapper, logger, operationalStoreOptions)
+            IOptionsSnapshot<OperationalStoreOptions> operationalStoreOptions,
+            UniqueValuesReservationOptions uniqueValuesReservationOptions)
+            : base(
+                serializer,
+                identityServerDocumentSessionProvider,
+                mapper,
+                logger,
+                operationalStoreOptions,
+                uniqueValuesReservationOptions)
         {
         }
     }
 
     /// <inheritdoc />
-    public abstract class DeviceFlowStore<TDeviceFlowCode> : IDeviceFlowStore
+    public class DeviceFlowStore<TDeviceFlowCode> : DeviceFlowStore<TDeviceFlowCode, UniqueReservation>
         where TDeviceFlowCode : DeviceFlowCode, new()
     {
         /// <summary>
@@ -52,18 +61,69 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
         /// <param name="mapper"></param>
         /// <param name="logger"></param>
         /// <param name="operationalStoreOptions"></param>
-        protected DeviceFlowStore(
+        /// <param name="uniqueValuesReservationOptions"></param>
+        public DeviceFlowStore(
             IPersistentGrantSerializer serializer,
             IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
             IIdentityServerStoreMapper mapper,
             ILogger<DeviceFlowStore<TDeviceFlowCode>> logger,
-            IOptionsSnapshot<OperationalStoreOptions> operationalStoreOptions)
+            IOptionsSnapshot<OperationalStoreOptions> operationalStoreOptions,
+            UniqueValuesReservationOptions uniqueValuesReservationOptions)
+            : base(
+                serializer,
+                identityServerDocumentSessionProvider,
+                mapper,
+                logger,
+                operationalStoreOptions,
+                uniqueValuesReservationOptions)
+        {
+        }
+
+        /// <inheritdoc />
+        protected override UniqueReservationDocumentUtility<UniqueReservation> CreateUniqueReservationDocumentsUtility(
+            UniqueReservationType reservationType,
+            string uniqueValue)
+        {
+            Debug.Assert(
+                UniqueValuesReservationOptions.UseReservationDocumentsForUniqueValues,
+                "Expected reservation documents to be configured for unique value reservations."
+            );
+            return new UniqueReservationDocumentUtility(
+                DocumentSession,
+                reservationType,
+                uniqueValue
+            );
+        }
+    }
+
+    /// <inheritdoc />
+    public abstract class DeviceFlowStore<TDeviceFlowCode, TUniqueReservation> : IDeviceFlowStore
+        where TDeviceFlowCode : DeviceFlowCode, new()
+        where TUniqueReservation : UniqueReservation
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DeviceFlowStore{TDeviceFlowCode,TUniqueReservation}"/> class.
+        /// </summary>
+        /// <param name="serializer"></param>
+        /// <param name="identityServerDocumentSessionProvider"></param>
+        /// <param name="mapper"></param>
+        /// <param name="logger"></param>
+        /// <param name="operationalStoreOptions"></param>
+        /// <param name="uniqueValuesReservationOptions"></param>
+        protected DeviceFlowStore(
+            IPersistentGrantSerializer serializer,
+            IdentityServerDocumentSessionProvider identityServerDocumentSessionProvider,
+            IIdentityServerStoreMapper mapper,
+            ILogger<DeviceFlowStore<TDeviceFlowCode, TUniqueReservation>> logger,
+            IOptionsSnapshot<OperationalStoreOptions> operationalStoreOptions,
+            UniqueValuesReservationOptions uniqueValuesReservationOptions)
         {
             DocumentSession = identityServerDocumentSessionProvider();
             Serializer = serializer;
             Mapper = mapper;
             Logger = logger;
             OperationalStoreOptions = operationalStoreOptions;
+            UniqueValuesReservationOptions = uniqueValuesReservationOptions;
         }
 
         /// <summary>
@@ -84,12 +144,17 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
         /// <summary>
         /// Gets the logger.
         /// </summary>
-        protected ILogger<DeviceFlowStore<TDeviceFlowCode>> Logger { get; }
+        protected ILogger<DeviceFlowStore<TDeviceFlowCode, TUniqueReservation>> Logger { get; }
 
         /// <summary>
         /// Gets the operational store options.
         /// </summary>
         protected IOptionsSnapshot<OperationalStoreOptions> OperationalStoreOptions { get; }
+
+        /// <summary>
+        /// Gets the configuration for unique values reservations.
+        /// </summary>
+        protected UniqueValuesReservationOptions UniqueValuesReservationOptions { get; }
 
         /// <summary>
         /// Device code will be reserved through the RavenDb compare exchange, while the User code is part of the ID.
@@ -206,11 +271,13 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             {
                 string changeVector = DocumentSession.Advanced.GetChangeVectorFor(existingEntity);
                 await DocumentSession.StoreAsync(existingEntity, changeVector, existingEntity.Id);
-                DocumentSession.ManageDocumentExpiresMetadata(
-                    OperationalStoreOptions.Value,
-                    existingEntity,
-                    existingEntity.Expiration
-                );
+
+                /*
+                 * NOTE: According to the original IDS store implementation we are not modifying the expiration
+                 * so no need to modify the expire flag (when enabled in options) for the compare exchange values
+                 * or the reservation documents.
+                 */
+
                 await DocumentSession.SaveChangesAsync().ConfigureAwait(false);
             }
             catch (ConcurrencyException)
@@ -248,13 +315,43 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                 return;
             }
 
-            var saveSuccess = false;
+            // cluster wide as we will deal with compare exchange values either directly or as atomic guards
+            DocumentSession.Advanced.SetTransactionMode(TransactionMode.ClusterWide);
+            DocumentSession.Advanced.UseOptimisticConcurrency = false; // cluster wide tx doesn't support opt. concurrency
+
+            if (UniqueValuesReservationOptions.UseReservationDocumentsForUniqueValues)
+            {
+                UniqueReservationDocumentUtility<TUniqueReservation> uniqueReservationUtil =
+                    CreateUniqueReservationDocumentsUtility(
+                        UniqueReservationType.DeviceCode,
+                        deviceCode
+                    );
+                await uniqueReservationUtil.MarkReservationForDeletionAsync();
+            }
+            else
+            {
+                // When using compare exchange for unique value reservations
+                CompareExchangeUtility compareExchangeUtility = CreateCompareExchangeUtility();
+                string compareExchangeKey = compareExchangeUtility.CreateCompareExchangeKey(
+                    UniqueReservationType.DeviceCode,
+                    deviceCode
+                );
+                CompareExchangeValue<string>? existingCompareExchange = await DocumentSession
+                    .Advanced
+                    .ClusterTransaction
+                    .GetCompareExchangeValueAsync<string>(compareExchangeKey)
+                    .ConfigureAwait(false);
+                if (existingCompareExchange != null)
+                {
+                    DocumentSession.Advanced.ClusterTransaction.DeleteCompareExchangeValue(existingCompareExchange);
+                }
+            }
+
             try
             {
-                string changeVector = DocumentSession.Advanced.GetChangeVectorFor(entity);
-                DocumentSession.Delete(entity.Id, changeVector);
+                // Cluster wide transaction, relying on atomic guards
+                DocumentSession.Delete(entity.Id);
                 await DocumentSession.SaveChangesAsync().ConfigureAwait(false);
-                saveSuccess = true;
             }
             catch (ConcurrencyException)
             {
@@ -273,25 +370,6 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                     ex.Message
                 );
             }
-            finally
-            {
-                if (saveSuccess)
-                {
-                    CompareExchangeUtility compareExchangeUtility = CreateCompareExchangeUtility();
-                    bool removeResult = await compareExchangeUtility.RemoveReservationAsync(
-                        CompareExchangeUtility.ReservationType.DeviceCode,
-                        entity,
-                        deviceCode
-                    ).ConfigureAwait(false);
-                    if (!removeResult)
-                    {
-                        Logger.LogError(
-                            "Failed removing device flow code entity from compare exchange for device code`{DeviceCode}` ",
-                            deviceCode
-                        );
-                    }
-                }
-            }
         }
 
         /// <summary>
@@ -308,38 +386,80 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             }
 
             string deviceCode = deviceFlowCodeEntity.DeviceCode;
-            CompareExchangeUtility compareExchangeUtility = CreateCompareExchangeUtility();
 
-            // Reserve the unique DeviceCode.
-            bool deviceCodeReservationResult = await compareExchangeUtility
-                .CreateReservationAsync(
-                    CompareExchangeUtility.ReservationType.DeviceCode,
-                    deviceFlowCodeEntity,
-                    deviceCode,
-                    deviceFlowCodeEntity.Id
-                ).ConfigureAwait(false);
-            if (!deviceCodeReservationResult)
-            {
-                throw new DuplicateException();
-            }
+            // cluster wide as we will deal with compare exchange values either directly or as atomic guards
+            // for unique reservations
+            DocumentSession.Advanced.SetTransactionMode(TransactionMode.ClusterWide);
+            DocumentSession.Advanced.UseOptimisticConcurrency = false; // cluster wide tx doesn't support opt. concurrency
 
-            var saveSuccess = false;
-            try
+            // optimistic concurrency handled by cluster wide transaction and atomic guards
+            await DocumentSession.StoreAsync(deviceFlowCodeEntity).ConfigureAwait(false);
+
+            DocumentSession.ManageDocumentExpiresMetadata(
+                OperationalStoreOptions.Value,
+                deviceFlowCodeEntity,
+                deviceFlowCodeEntity.Expiration
+            );
+
+            // Handle unique device code
+            if (UniqueValuesReservationOptions.UseReservationDocumentsForUniqueValues)
             {
-                await DocumentSession
-                    .StoreAsync(
-                        deviceFlowCodeEntity,
-                        string.Empty,
-                        deviceFlowCodeEntity.Id
-                    )
+                UniqueReservationDocumentUtility<TUniqueReservation> uniqueReservationUtil =
+                    CreateUniqueReservationDocumentsUtility(
+                        UniqueReservationType.DeviceCode,
+                        deviceCode
+                    );
+                bool uniqueExists = await uniqueReservationUtil.CheckIfUniqueIsTakenAsync().ConfigureAwait(false);
+                if (uniqueExists)
+                {
+                    throw new DuplicateException();
+                }
+
+                UniqueReservation reservationDocument = await uniqueReservationUtil
+                    .CreateReservationDocumentAddToUnitOfWorkAsync(deviceFlowCodeEntity.Id)
                     .ConfigureAwait(false);
+
+                // add document expiration to be the same as entity
                 DocumentSession.ManageDocumentExpiresMetadata(
                     OperationalStoreOptions.Value,
-                    deviceFlowCodeEntity,
+                    reservationDocument,
                     deviceFlowCodeEntity.Expiration
                 );
+            }
+            else
+            {
+                CompareExchangeUtility compareExchangeUtility = CreateCompareExchangeUtility();
+                string compareExchangeKey = compareExchangeUtility.CreateCompareExchangeKey(
+                    UniqueReservationType.DeviceCode,
+                    deviceCode
+                );
+                CompareExchangeValue<string>? existingCompareExchange = await DocumentSession
+                    .Advanced
+                    .ClusterTransaction
+                    .GetCompareExchangeValueAsync<string>(compareExchangeKey)
+                    .ConfigureAwait(false);
+
+                if (existingCompareExchange != null)
+                {
+                    throw new DuplicateException();
+                }
+
+                CompareExchangeValue<string> newCompareExchangeValue = DocumentSession
+                    .Advanced
+                    .ClusterTransaction
+                    .CreateCompareExchangeValue(
+                        compareExchangeKey,
+                        deviceFlowCodeEntity.Id
+                    );
+                newCompareExchangeValue.ManageCompareExchangeExpiresMetadata(
+                    OperationalStoreOptions.Value,
+                    deviceFlowCodeEntity.Expiration
+                );
+            }
+
+            try
+            {
                 await DocumentSession.SaveChangesAsync().ConfigureAwait(false);
-                saveSuccess = true;
             }
             catch (ConcurrencyException)
             {
@@ -348,24 +468,6 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
             catch (Exception ex)
             {
                 Logger.LogError(ex, "Failed storing new device flow code entity {Message}", ex.Message);
-            }
-            finally
-            {
-                if (!saveSuccess)
-                {
-                    bool removeResult = await compareExchangeUtility.RemoveReservationAsync(
-                        CompareExchangeUtility.ReservationType.DeviceCode,
-                        deviceFlowCodeEntity,
-                        deviceCode
-                    ).ConfigureAwait(false);
-                    if (!removeResult)
-                    {
-                        Logger.LogError(
-                            "Failed removing device code '{DeviceCode}' from compare exchange ",
-                            deviceCode
-                        );
-                    }
-                }
             }
         }
 
@@ -481,27 +583,44 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
         /// <returns>DeviceFlowCode if found, otherwise Null.</returns>
         protected virtual async Task<TDeviceFlowCode?> FindDeviceFlowCodeAsync(string deviceCode)
         {
-            CompareExchangeUtility compareExchangeUtility = CreateCompareExchangeUtility();
-            CompareExchangeValue<string>? compareExchangeResult = await compareExchangeUtility
-                .GetReservationAsync<string, TDeviceFlowCode?>(
-                    CompareExchangeUtility.ReservationType.DeviceCode,
-                    null,
-                    deviceCode
-                ).ConfigureAwait(false);
-
-            if (compareExchangeResult is null)
+            string? deviceFlowCodeId = null;
+            if (UniqueValuesReservationOptions.UseReservationDocumentsForUniqueValues)
             {
-                return null;
+                UniqueReservationDocumentUtility<TUniqueReservation> uniqueReservationUtil =
+                    CreateUniqueReservationDocumentsUtility(
+                        UniqueReservationType.DeviceCode,
+                        deviceCode
+                    );
+                UniqueReservation? reservation =
+                    await uniqueReservationUtil.LoadReservationAsync().ConfigureAwait(false);
+                if (reservation != null)
+                {
+                    deviceFlowCodeId = reservation.ReferenceId;
+                }
+            }
+            else
+            {
+                CompareExchangeUtility compareExchangeUtility = CreateCompareExchangeUtility();
+                string compareExchangeKey = compareExchangeUtility.CreateCompareExchangeKey(
+                    UniqueReservationType.DeviceCode,
+                    deviceCode
+                );
+                CompareExchangeValue<string>? existingCompareExchange = await compareExchangeUtility
+                    .LoadCompareExchangeValueAsync<string>(compareExchangeKey)
+                    .ConfigureAwait(false);
+                if (existingCompareExchange != null)
+                {
+                    deviceFlowCodeId = existingCompareExchange.Value;
+                }
             }
 
-            string entityId = compareExchangeResult.Value;
-            if (string.IsNullOrWhiteSpace(entityId))
+            if (string.IsNullOrWhiteSpace(deviceFlowCodeId))
             {
                 return null;
             }
 
             TDeviceFlowCode? code = await DocumentSession
-                .LoadAsync<TDeviceFlowCode>(entityId)
+                .LoadAsync<TDeviceFlowCode>(deviceFlowCodeId)
                 .ConfigureAwait(false);
 
             if (code is null)
@@ -509,7 +628,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                 Logger.LogWarning(
                     "Device code flow compare exchange has value but entity was not found. " +
                     "Entity id: {EntityId} DeviceCode: {DeviceCode}",
-                    entityId,
+                    deviceFlowCodeId,
                     deviceCode
                 );
                 return null;
@@ -520,7 +639,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
                 Logger.LogWarning(
                     "Device code flow compare exchange value that points to a entity which device code value" +
                     " differs from the compare exchange device code value. Entity id: {EntityId} DeviceCode: {DeviceCode}",
-                    entityId,
+                    deviceFlowCodeId,
                     deviceCode
                 );
                 return null;
@@ -535,7 +654,21 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Stores
         /// <returns>Instance of <see cref="CompareExchangeUtility"/>.</returns>
         protected virtual CompareExchangeUtility CreateCompareExchangeUtility()
         {
+            Debug.Assert(
+                !UniqueValuesReservationOptions.UseReservationDocumentsForUniqueValues,
+                "Expected compare exchange values to be configured for unique value reservations."
+            );
             return new CompareExchangeUtility(DocumentSession);
         }
+
+        /// <summary>
+        /// Create an instance of <see cref="UniqueReservationDocumentUtility"/>.
+        /// </summary>
+        /// <param name="reservationType"></param>
+        /// <param name="uniqueValue"></param>
+        /// <returns>Instance of <see cref="UniqueReservationDocumentUtility"/>.</returns>
+        protected abstract UniqueReservationDocumentUtility<TUniqueReservation> CreateUniqueReservationDocumentsUtility(
+            UniqueReservationType reservationType,
+            string uniqueValue);
     }
 }

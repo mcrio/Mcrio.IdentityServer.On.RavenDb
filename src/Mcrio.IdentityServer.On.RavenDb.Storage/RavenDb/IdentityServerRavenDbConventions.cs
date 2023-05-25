@@ -1,5 +1,6 @@
 using System;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Entities;
+using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Utility;
 
 namespace Mcrio.IdentityServer.On.RavenDb.Storage.RavenDb
 {
@@ -49,6 +50,12 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.RavenDb
             if (typeof(PersistedGrant).IsAssignableFrom(type))
             {
                 collectionName = "ApiGrants";
+                return true;
+            }
+
+            if (typeof(UniqueReservation).IsAssignableFrom(type))
+            {
+                collectionName = "IdsrvUniqueReservations";
                 return true;
             }
 

@@ -24,6 +24,15 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests
     {
         private IDocumentStore? _documentStore;
 
+        protected static Task<CompareExchangeValue<TValue>> GetCompareExchangeAsync<TValue>(
+            IDocumentStore documentStore,
+            string cmpExchangeKey)
+        {
+            return documentStore.Operations.SendAsync(
+                new GetCompareExchangeValueOperation<TValue>(cmpExchangeKey)
+            );
+        }
+
         protected override void PreInitialize(IDocumentStore documentStore)
         {
             documentStore.Conventions.FindCollectionName = type =>
@@ -35,10 +44,12 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests
 
                 return DocumentConventions.DefaultGetCollectionName(type);
             };
+            documentStore.Conventions.UseOptimisticConcurrency = true;
         }
 
         protected ServiceScope InitializeServices(
-            Action<OperationalStoreOptions>? operationalStoreOptions = null)
+            Action<OperationalStoreOptions>? operationalStoreOptions = null,
+            Action<UniqueValuesReservationOptions>? uniqueValuesReservationOptionsConfig = null)
         {
             _documentStore ??= GetDocumentStore();
 
@@ -54,7 +65,8 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests
             // Identity server ravendb related services
             serviceCollection.IdentityServerAddRavenDbServices(
                 provider => provider.GetRequiredService<IAsyncDocumentSession>(),
-                provider => provider.GetRequiredService<IDocumentStore>()
+                provider => provider.GetRequiredService<IDocumentStore>(),
+                uniqueValuesReservationOptionsConfig
             );
 
             // Identity Server operational services
@@ -106,7 +118,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests
 
         protected async Task AssertCompareExchangeKeyExistsWithValueAsync<TValue>(
             string cmpExchangeKey,
-            TValue value,
+            TValue expectedValue,
             string because = "")
         {
             IDocumentStore documentStore = InitializeServices().DocumentStore;
@@ -114,7 +126,7 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests
             result.Should().NotBeNull(
                 $"cmp exchange {cmpExchangeKey} should exist because {because}"
             );
-            result.Value.Should().Be(value);
+            result.Value.Should().Be(expectedValue);
         }
 
         protected async Task AssertCompareExchangeKeyDoesNotExistAsync(string cmpExchangeKey, string because = "")
@@ -123,15 +135,6 @@ namespace Mcrio.IdentityServer.On.RavenDb.Storage.Tests.IntegrationTests
             CompareExchangeValue<string> result = await GetCompareExchangeAsync<string>(documentStore, cmpExchangeKey);
             result.Should().BeNull(
                 $"cmp exchange {cmpExchangeKey} should not exist because {because}"
-            );
-        }
-
-        private static Task<CompareExchangeValue<TValue>> GetCompareExchangeAsync<TValue>(
-            IDocumentStore documentStore,
-            string cmpExchangeKey)
-        {
-            return documentStore.Operations.SendAsync(
-                new GetCompareExchangeValueOperation<TValue>(cmpExchangeKey)
             );
         }
     }

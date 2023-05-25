@@ -3,6 +3,7 @@ using IdentityServer4.Models;
 using Mcrio.IdentityServer.On.RavenDb.Storage;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Cors;
 using Mcrio.IdentityServer.On.RavenDb.Storage.Stores;
+using Mcrio.IdentityServer.On.RavenDb.Storage.Stores.Utility;
 using Mcrio.IdentityServer.On.RavenDb.Storage.TokenCleanup;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -28,7 +29,7 @@ namespace Mcrio.IdentityServer.On.RavenDb
             bool addOperationalStore = true)
         {
             return AddRavenDbStores<Storage.Entities.PersistedGrant, PersistedGrantStore,
-                Storage.Entities.DeviceFlowCode, DeviceFlowStore>(
+                Storage.Entities.DeviceFlowCode, DeviceFlowStore, UniqueReservation>(
                 builder,
                 documentSessionServiceLocator,
                 documentStoreServiceLocator,
@@ -39,8 +40,12 @@ namespace Mcrio.IdentityServer.On.RavenDb
             );
         }
 
+        /// <summary>
+        /// Configures IdentityServer with the RavenDB implementation of configuration and operational stores.
+        /// </summary>
+        /// <returns>Identity server builder.</returns>
         public static IIdentityServerBuilder AddRavenDbStores<TPersistedGrantEntity, TPersistedGrantStore,
-            TDeviceFlowCode, TDeviceFlowStore>(
+            TDeviceFlowCode, TDeviceFlowStore, TUniqueReservation>(
             this IIdentityServerBuilder builder,
             IdentityServerDocumentSessionServiceLocator documentSessionServiceLocator,
             IdentityServerDocumentStoreServiceLocator documentStoreServiceLocator,
@@ -51,13 +56,14 @@ namespace Mcrio.IdentityServer.On.RavenDb
             where TPersistedGrantEntity : Storage.Entities.PersistedGrant
             where TDeviceFlowCode : Storage.Entities.DeviceFlowCode, new()
             where TPersistedGrantStore : PersistedGrantStore<TPersistedGrantEntity>
-            where TDeviceFlowStore : DeviceFlowStore<TDeviceFlowCode>
+            where TDeviceFlowStore : DeviceFlowStore<TDeviceFlowCode, TUniqueReservation>
+            where TUniqueReservation : UniqueReservation
         {
             return AddRavenDbStores<ClientStore, ResourceStore, CorsPolicyService,
                 ClientStoreExtension, ResourceStoreExtension, TPersistedGrantStore, TDeviceFlowStore,
                 TokenCleanupService, TokenCleanupBackgroundService, Client, Storage.Entities.Client,
                 IdentityResource, Storage.Entities.IdentityResource, ApiResource, Storage.Entities.ApiResource,
-                ApiScope, Storage.Entities.ApiScope, TPersistedGrantEntity, TDeviceFlowCode>(
+                ApiScope, Storage.Entities.ApiScope, TPersistedGrantEntity, TDeviceFlowCode, TUniqueReservation>(
                 builder,
                 documentSessionServiceLocator,
                 documentStoreServiceLocator,
@@ -76,7 +82,7 @@ namespace Mcrio.IdentityServer.On.RavenDb
             TClientStoreExtension, TResourceStoreExtension, TPersistedGrantStore, TDeviceFlowStore,
             TTokenCleanupService, TTokenCleanupBackgroundService, TClient, TClientEntity,
             TIdentityResource, TIdentityResourceEntity, TApiResource, TApiResourceEntity,
-            TApiScope, TApiScopeEntity, TPersistedGrantEntity, TDeviceFlowCode>(
+            TApiScope, TApiScopeEntity, TPersistedGrantEntity, TDeviceFlowCode, TUniqueReservation>(
             this IIdentityServerBuilder builder,
             IdentityServerDocumentSessionServiceLocator documentSessionServiceLocator,
             IdentityServerDocumentStoreServiceLocator documentStoreServiceLocator,
@@ -91,7 +97,7 @@ namespace Mcrio.IdentityServer.On.RavenDb
             where TResourceStoreExtension : ResourceStoreExtension<TIdentityResource, TIdentityResourceEntity,
                 TApiResource, TApiResourceEntity, TApiScope, TApiScopeEntity>
             where TPersistedGrantStore : PersistedGrantStore<TPersistedGrantEntity>
-            where TDeviceFlowStore : DeviceFlowStore<TDeviceFlowCode>
+            where TDeviceFlowStore : DeviceFlowStore<TDeviceFlowCode, TUniqueReservation>
             where TTokenCleanupService : TokenCleanupService
             where TTokenCleanupBackgroundService : TokenCleanupBackgroundService
             where TClient : Client
@@ -104,6 +110,7 @@ namespace Mcrio.IdentityServer.On.RavenDb
             where TApiScopeEntity : Storage.Entities.ApiScope
             where TPersistedGrantEntity : Storage.Entities.PersistedGrant
             where TDeviceFlowCode : Storage.Entities.DeviceFlowCode, new()
+            where TUniqueReservation : UniqueReservation
         {
             if (builder == null)
             {
